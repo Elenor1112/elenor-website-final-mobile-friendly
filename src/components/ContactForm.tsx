@@ -12,8 +12,11 @@ function SubmitButton() {
   );
 }
 
+// text-base below md, text-sm from md up: iOS Safari zooms the page in when a
+// focused field's text is under 16px, which on a phone leaves the form
+// half-off-screen mid-fill. Desktop keeps the 14px it was designed with.
 const field =
-  'w-full rounded-xl border border-white/12 bg-white/[0.03] px-4 py-3 text-sm text-white placeholder-white/30 outline-none transition-colors focus:border-brand-glow focus:bg-white/[0.05]';
+  'w-full rounded-xl border border-white/12 bg-white/[0.03] px-4 py-3 text-base md:text-sm text-white placeholder-white/30 outline-none transition-colors focus:border-brand-glow focus:bg-white/[0.05]';
 
 export function ContactForm({
   services,

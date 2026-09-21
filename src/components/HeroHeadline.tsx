@@ -81,7 +81,16 @@ const VIEW = {
  * because both numbers are derived from the measured boxes above — if the crop
  * or the cap moves, the paragraph follows.
  */
-export const HEADLINE_BOX = `min(100%, calc(51vh * ${VIEW.w} / ${VIEW.h}))`;
+/**
+ * The cap is indirected through `--headline-cap` so the mobile layer can
+ * replace it inside a media query (see mobile.css). A viewport-height cap is
+ * right on a landscape screen but wrong on a phone, where height is the
+ * abundant axis and width is the scarce one — there the lockup must be capped
+ * by the column instead, or it overflows the viewport. Folding that case into
+ * this `min()` as an extra term is not an option: on a tall, narrow desktop
+ * window (768x1080) a width term would win and change the desktop rendering.
+ */
+export const HEADLINE_BOX = `min(100%, var(--headline-cap, calc(51vh * ${VIEW.w} / ${VIEW.h})))`;
 export const HEADLINE_INK_SPAN = (817 - VIEW.x) / VIEW.w;
 export const HEADLINE_WIDTH = `calc(${HEADLINE_BOX} * ${HEADLINE_INK_SPAN})`;
 
@@ -152,7 +161,23 @@ const SEQUENCE_END = 2.58;
 /** Fade-up for the surrounding hero copy, once the lockup settles. */
 const REST_FADE = { duration: 0.7, stagger: 0.1, ease: 'power2.inOut' } as const;
 
-const PREP_SCRIPT = `(function(){try{if(sessionStorage.getItem('${STORAGE_KEY}'))return;if(window.matchMedia('(prefers-reduced-motion: reduce)').matches)return;var s=document.createElement('style');s.id='${PREP_ID}';s.textContent='[data-ink]{opacity:0}[data-hero-rest]{opacity:0}';document.head.appendChild(s);}catch(e){}})();`;
+// Hides the lockup ink and the surrounding hero copy before first paint, so the
+// reveal animation can play them in rather than having them pop.
+//
+// The watchdog matters as much as the hiding does. Everything this script hides
+// is restored by the GSAP timeline, which cannot start until React hydrates —
+// and on a throttled handset hydration was still pending ten seconds in. The
+// result was a hero with an invisible headline AND invisible body copy: the
+// visitor saw an empty page and had no way to know anything was coming.
+//
+// So if the reveal has not taken over within 2.5s, this removes its own style
+// tag and the hero simply appears, unanimated. The animation is the treat; the
+// content is the point.
+const PREP_SCRIPT = `(function(){try{if(sessionStorage.getItem('${STORAGE_KEY}'))return;if(window.matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+var s=document.createElement('style');s.id='${PREP_ID}';s.textContent='[data-ink]{opacity:0}[data-hero-rest]{opacity:0}';document.head.appendChild(s);
+setTimeout(function(){var t=document.getElementById('${PREP_ID}');
+if(t&&!document.querySelector('[data-headline-armed]')){t.remove();}},2500);
+}catch(e){}})();`;
 
 /**
  * Per-word font sizing.
@@ -189,6 +214,10 @@ export function HeroHeadline({ line1, line2 }: { line1: string; line2: string })
   useLayoutEffect(() => {
     const root = rootRef.current;
     if (!root) return;
+
+    // Tell the pre-paint watchdog in PREP_SCRIPT to stand down: the reveal has
+    // hydrated and will restore what that script hid.
+    root.setAttribute('data-headline-armed', '');
 
     const removePrep = () => document.getElementById(PREP_ID)?.remove();
 

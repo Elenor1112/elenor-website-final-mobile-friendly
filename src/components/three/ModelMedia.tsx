@@ -67,6 +67,18 @@ export function ModelMedia({
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
+
+    // Phones and data-saver sessions never auto-load the model. A GLB in this
+    // CMS is routinely tens of megabytes — the one this gallery shipped with
+    // was 102MB — and nothing about scrolling past a tile is consent to spend
+    // that. The poster image is already server-rendered underneath, so the
+    // tile still shows the work; ModelViewer is simply never mounted.
+    const conn = (navigator as unknown as { connection?: { saveData?: boolean } }).connection;
+    const phone =
+      window.matchMedia('(max-width: 767.98px)').matches ||
+      window.matchMedia('(pointer: coarse)').matches;
+    if (phone || conn?.saveData) return;
+
     // Without IntersectionObserver (very old browsers) just load immediately.
     if (typeof IntersectionObserver === 'undefined') {
       setVisible(true);

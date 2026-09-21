@@ -11,6 +11,8 @@ import { SiteBackground } from '@/components/SiteBackground';
 import { AnalyticsScripts, ThemeStyle } from '@/components/SiteTheme';
 import { DraftBanner } from '@/components/DraftBanner';
 import { ChatWidgetLoader } from '@/components/chat/ChatWidgetLoader';
+import { MobilePageTransition } from '@/components/MobilePageTransition';
+import { MobileChrome } from '@/components/MobileChrome';
 
 export async function generateMetadata(): Promise<Metadata> {
   const site = await getSiteSettings();
@@ -60,6 +62,12 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
       <JsonLd data={organizationSchema(site)} />
       <SmoothScroll />
       <ScrollProgress />
+      {/* Replays a short entrance on <main> when the route changes. The motion
+          itself is defined in mobile.css, so this is inert on desktop. */}
+      <MobilePageTransition />
+      {/* Phone-only chrome (route loading bar). Mounted behind a runtime gate
+          rather than hidden with CSS, so desktop never runs its listeners. */}
+      <MobileChrome />
       <Nav
         links={
           headerLinks.length > 0

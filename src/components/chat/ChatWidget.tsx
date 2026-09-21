@@ -255,6 +255,9 @@ export default function ChatWidget() {
         aria-expanded={isOpen}
         aria-controls={panelId}
         aria-label={isOpen ? 'Close Elenor AI assistant' : 'Open Elenor AI assistant'}
+        // Hook for the mobile layer, which recedes the launcher while the page
+        // is scrolling so it stops sitting on top of content (see mobile.css).
+        data-chat-launcher
         className={`fixed bottom-5 right-5 z-[60] flex h-14 w-14 items-center justify-center rounded-full shadow-[0_8px_30px_-6px_rgba(0,0,0,0.6)] transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-glow focus-visible:ring-offset-2 focus-visible:ring-offset-ink motion-safe:hover:scale-105 ${
           isOpen
             ? 'bg-white/10 text-white backdrop-blur-xl'
@@ -429,7 +432,7 @@ export default function ChatWidget() {
               onKeyDown={onInputKeyDown}
               placeholder="Ask about our services…"
               disabled={isStreaming}
-              className="max-h-[120px] min-h-[24px] flex-1 resize-none bg-transparent text-[0.9375rem] text-white placeholder:text-white/30 focus:outline-none disabled:opacity-50"
+              className="max-h-[120px] min-h-[24px] flex-1 resize-none bg-transparent text-base md:text-[0.9375rem] text-white placeholder:text-white/30 focus:outline-none disabled:opacity-50"
             />
 
             {isStreaming ? (

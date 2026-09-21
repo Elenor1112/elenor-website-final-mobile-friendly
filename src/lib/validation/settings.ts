@@ -116,7 +116,7 @@ export const workSettingsSchema = z.object({
       'FMCG',
       'Food & Beverages',
       'Automotive',
-      'Production',
+      'Media Production',
       'Law Firms',
       'Institutions',
       'Home Appliances',

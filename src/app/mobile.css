@@ -1,0 +1,656 @@
+/* ───────────────────────────────────────────────────────────────────────────
+   MOBILE LAYER — phones only (≤767.98px)
+
+   The site's base styles were authored desktop-first: desktop values are the
+   BASE and md:/lg: prefixes add more on top, so before this file a 320px phone
+   and a 1280px desktop resolved to the same declarations. This layer is the
+   mobile tier that never existed.
+
+   EVERY rule in this file lives inside the single media query below. That is
+   the hard guarantee behind the project constraint that desktop rendering must
+   stay pixel-for-pixel identical: a rule inside `@media (max-width: 767.98px)`
+   cannot reach a ≥768px viewport. Do not add a rule outside it.
+
+   767.98px (not 767px) matches Tailwind's own `max-md:` boundary exactly, so
+   inline `max-md:` utilities and the rules here switch on the same pixel and
+   leave no dead zone on fractional-DPR devices.
+   ─────────────────────────────────────────────────────────────────────────── */
+
+@media (max-width: 767.98px) {
+  /* ── Design tokens ───────────────────────────────────────────────────────
+     A mobile type scale (16px base, ~1.2 ratio) and a 4px spacing rhythm.
+     Desktop keeps its own larger scale; these names exist only in here. */
+  :root {
+    --m-display: 2.125rem; /* 34px — h1 */
+    --m-h2: 1.6875rem; /* 27px */
+    --m-h3: 1.3125rem; /* 21px */
+    --m-body: 1rem; /* 16px */
+    --m-small: 0.875rem; /* 14px */
+
+    --m-gutter: 1.5rem; /* matches container-x's px-6 — kept deliberately */
+    --m-section-y: 4rem; /* 64px, down from desktop's 112px */
+    --m-card-p: 1.25rem; /* 20px */
+
+    /* One easing and one set of durations for every mobile transition, so the
+       whole surface moves with a single character. */
+    --m-ease: cubic-bezier(0.16, 1, 0.3, 1);
+    --m-dur-micro: 150ms;
+    --m-dur: 250ms;
+    --m-dur-sheet: 280ms;
+  }
+
+  /* ── Horizontal containment ──────────────────────────────────────────────
+     Deliberately NOT `html { overflow-x: hidden }`.
+
+     Setting overflow-x on the ROOT element makes the document element a scroll
+     container, and on Android Chrome that stops Lenis-driven touch scrolling
+     dead: the page renders correctly and then simply does not move under your
+     finger. globals.css already carries `body { overflow-x: hidden }`, which
+     clips sideways overflow without claiming the root scroller — and the
+     things that actually overflowed (the showcase strip's track, BrandOrbit's
+     orbs) are clipped at their own source below, so the root rule was
+     belt-and-braces that cost the whole page its scrolling.
+
+     overscroll-behavior-x on <body> still suppresses the browser's back-swipe
+     on a stray sideways drag, which is the part worth keeping. */
+  body {
+    overscroll-behavior-x: none;
+  }
+
+  /* The hero showcase strip fades its edges with a mask (ImageAutoSlider). A
+     mask hides pixels but does not remove them from the scrollable overflow
+     region, so the `w-max` track — several viewports wide — kept the document
+     scrolling sideways with it: ~3960px of horizontal scroll on a 320px phone,
+     which is what made the whole site feel broken on mobile.
+
+     Clipped here rather than in the component's own <style> because that block
+     interpolates a prop, so adding to it changes a text node React diffs during
+     hydration. Left unclipped at md+, where overflow:hidden would also cut off
+     the cards' :hover scale(1.05) pop. */
+  .image-auto-slider__mask {
+    overflow: hidden;
+  }
+
+  /* BrandOrbit lets its orbs fly outside the container by design — a
+     deliberate desktop composition (see BrandOrbit.css). On a phone there is
+     no margin to spill into, so the orbs become horizontal page scroll.
+     Clipping here preserves that intent where it works and contains it where
+     it doesn't. */
+  .brand-orbit {
+    overflow: hidden;
+  }
+
+  /* ── Hero lockup ─────────────────────────────────────────────────────────
+     HeroHeadline caps its SVG at 51vh worth of width, which suits a landscape
+     screen where height is the scarce axis. A phone is the opposite: capping
+     by height lets the lockup grow far wider than the screen. Cap by the
+     column instead — the `min(100%, …)` in HEADLINE_BOX then resolves to the
+     available width and the lockup simply fills it. */
+  :root {
+    --headline-cap: 100%;
+  }
+
+  /* ── Vertical rhythm ─────────────────────────────────────────────────────
+     Section padding was authored for a 900px-tall desktop viewport: py-32 is
+     128px above AND below, which on an 844px phone spends a third of the
+     screen on empty space before any content appears, and stretched the
+     homepage to ~12 screens. Scaled to a phone-appropriate rhythm here rather
+     than by editing each section, so the spacing stays consistent and the
+     desktop class strings are left alone.
+
+     Tailwind's py-* utilities are single class selectors, so matching that
+     specificity is enough — no !important needed. */
+  main .py-32 {
+    padding-top: 4.5rem;
+    padding-bottom: 4.5rem;
+  }
+  main .py-28 {
+    padding-top: 4rem;
+    padding-bottom: 4rem;
+  }
+  main .py-24 {
+    padding-top: 3.5rem;
+    padding-bottom: 3.5rem;
+  }
+  main .py-20 {
+    padding-top: 3rem;
+    padding-bottom: 3rem;
+  }
+  main .py-16 {
+    padding-top: 2.5rem;
+    padding-bottom: 2.5rem;
+  }
+  /* Page headers that sit directly above a decorative animation stage: the
+     stage's aspect-ratio box already reserves empty space for its artwork to
+     move in, so the section's own bottom padding stacks on top of it and reads
+     as a gap rather than as breathing room. */
+  main .pb-16 {
+    padding-bottom: 2rem;
+  }
+  /* Card padding: p-6/p-7/p-8 (24/28/32px) leaves ~200px of usable width
+     inside a 320px screen once the page gutters are counted, and makes a
+     two-line card taller than its content needs. */
+  main .p-8 {
+    padding: 1.375rem;
+  }
+  main .p-7 {
+    padding: 1.25rem;
+  }
+  main .p-6 {
+    padding: 1.125rem;
+  }
+
+  /* Section intro copy: the desktop layout sets these beside the content, so
+     the large top margin reads as a column gap. Stacked on a phone it becomes
+     a vertical void bigger than the section's own padding. */
+  main .mt-7 {
+    margin-top: 1.125rem;
+  }
+  main .mt-10 {
+    margin-top: 1.75rem;
+  }
+  main .mt-12 {
+    margin-top: 2rem;
+  }
+
+  /* Large top offsets between a section heading and its content. */
+  main .mt-14 {
+    margin-top: 2.25rem;
+  }
+  main .mt-16 {
+    margin-top: 2.5rem;
+  }
+
+  /* ── Typography ──────────────────────────────────────────────────────────
+     The desktop scale assumes a wide column. Held at phone width the display
+     sizes wrap to four or five lines and lose their shape, and the body sizes
+     read like a printed document rather than an interface.
+
+     Two rules govern the sizes below. Display type gets NEGATIVE tracking,
+     because letterspacing that looks right at 60px is visibly loose at 32px —
+     large type needs to be pulled together. Body type gets TIGHTER leading
+     than desktop (1.5 rather than 1.63): a 40-character measure does not need
+     1.63 to stay readable, and on a small screen the extra leading just costs
+     lines of content per screen. */
+  main .text-6xl {
+    font-size: 2.5rem;
+    line-height: 1.06;
+    letter-spacing: -0.03em;
+  }
+  main .text-5xl {
+    font-size: 2.1875rem;
+    line-height: 1.08;
+    letter-spacing: -0.028em;
+  }
+  main .text-4xl {
+    font-size: 1.9375rem;
+    line-height: 1.12;
+    letter-spacing: -0.025em;
+  }
+  main .text-3xl {
+    font-size: 1.75rem;
+    line-height: 1.16;
+    letter-spacing: -0.022em;
+  }
+  main .text-2xl {
+    font-size: 1.375rem;
+    line-height: 1.25;
+    letter-spacing: -0.015em;
+  }
+
+  /* Body. `text-lg` is the lede size and carries the most air; `text-base`
+     and `text-sm` are running copy and captions. */
+  main .text-lg {
+    font-size: 1.0625rem;
+    line-height: 1.55;
+  }
+  main .text-base {
+    font-size: 1rem;
+    line-height: 1.55;
+  }
+  main .text-sm {
+    line-height: 1.55;
+  }
+
+  /* Justified setting needs a long measure to distribute space invisibly. The
+     CEO letter and the Tailored story are justified for the wide column they
+     were designed in; at ~30 characters per line on a phone the same rule
+     opens rivers of white between words ("Earning    my    Master    of").
+     Ragged-right is the correct setting at this measure. */
+  main .text-justify {
+    text-align: left;
+    word-spacing: normal;
+    hyphens: auto;
+  }
+
+  /* Small metadata (bylines, dates, read times) is correctly the quietest
+     thing on the page, but 12px at 40% white is set for a desk in a lit room.
+     On a phone held outdoors it drops below readable, so the size stays and
+     only the contrast comes up — the hierarchy is unchanged, the text is
+     simply legible. */
+  main .text-xs {
+    font-size: 0.8125rem;
+  }
+  main .text-xs.text-white\/40,
+  main .text-xs.text-white\/35 {
+    color: rgb(255 255 255 / 0.58);
+  }
+
+  /* The eyebrow's 0.22em tracking was set for 12px on a wide screen; at phone
+     width it pushes short labels onto two lines. */
+  main .eyebrow,
+  .eyebrow {
+    letter-spacing: 0.14em;
+    font-size: 0.6875rem;
+  }
+
+  /* ── About hero ──────────────────────────────────────────────────────────
+     The full desktop composition — the loupe sweeping the "About us" wordmark
+     while six isometric props fly in from off-stage right — runs here too.
+
+     It used to be hidden, because the composition genuinely does not fit at
+     phone width. But the cause was narrower than it looked. The stage is a
+     fraction of vw while .about-hero__wordtext is a FIXED px size (45 below
+     md), so "the word fills its slot" and "the composition fits the viewport"
+     pull the stage width in opposite directions. At 390px the word came out
+     1.67x too wide for its box (45px set against the 27.0px that would be
+     proportional), which is what clipped it to a fragment — and the same
+     mismatch squeezed the glass to 25px and the props to ~14px specks.
+
+     Both are fixed by one scalar. Scaling the stage to 1.6 viewports at its
+     native 1920/500 ratio and restoring the proportional font-size makes the
+     word fill its slot exactly (ratio 1.00 by construction, at every phone
+     width) and brings the glass to ~41px and the largest prop to ~73px at
+     390px. .about-hero's own overflow:hidden clips the overhang, so the
+     off-stage right the props fly in from is real here, just not visible.
+
+     Nothing in AboutHero.tsx changes: it measures the rendered glyphs on every
+     layout, on fonts.ready and on resize, and derives the sweep endpoints, the
+     park and the per-glyph falloff as ratios of the current frame's radius — so
+     the animation already follows the letters at any text size. Verified at
+     320/390/430/767px that every prop still starts off-screen, the lens still
+     enters off-screen, and the park still lands on-screen.
+
+     1.6 appears here and in the font-size below, and is the only number to
+     touch if the cluster reads too close to the right edge (ink slack is
+     69-165px across the range, tightest at 320px).
+
+     Do NOT introduce `display:none` on .about-hero__stage. Even declared inside
+     this never-matching-on-desktop query it perturbs Chromium's subpixel text
+     layout at >=768px, shifting the lens by up to 7/255 at 1280, 1440 and 1920
+     — because AboutHero measures its own rendered wordmark to place the lens.
+     Verified by pixel diff. The rules below avoid it; keep it that way. */
+  .about-hero__stage {
+    --about-stage-w: 160vw;
+    /* WORDTEXT_VW in AboutHero.tsx: 6.92% of the stage width is the size at
+       which "About us" in Sora Bold exactly fills the WORD box. The stage is
+       1.6 viewports, so that is 6.92% of 160vw. ~43px at 390px — within 4% of
+       the 45px it replaces, so the word reads the same size while now being in
+       proportion to the composition around it.
+
+       This deliberately abandons, below md only, the "both hero headings are
+       the same size at every width" invariant that pinned this to the services
+       h1's text-4xl/md:text-6xl. Here the word is art inside a composition
+       rather than a member of the type scale, so it tracks the composition. */
+    --about-wordtext-size: calc(6.92 * 1.6vw);
+  }
+
+  /* The lede is pulled up into the stage's own footprint, as on desktop, but
+     the trim is a different number here and for a different reason.
+
+     On desktop the word sits alone in the stage's upper portion and everything
+     below it is dead space, so page.tsx trims to the WORD box's bottom:
+     band = stageH * (1 - 139.6/500) - font-size, i.e. the documented
+     0.1875*vw - fs. On a phone the loupe and the props occupy that lower
+     portion — the loupe's image box reaches stage-y 368.3 (73.7% of the stage)
+     during the sweep — so the trim has to stop at the COMPOSITION's bottom
+     instead, or the paragraph would sit on top of the props:
+
+       dead band = stageH * (1 - 368.3/500)
+                 = (1.6vw * 500/1920) * 0.2634
+                 = 0.10973 * vw
+
+     Subtracting that from the band leaves the same constant 28px gap between
+     the word and the lede that the services hub keeps — -7px at 320, -15px at
+     390, -19px at 430.
+
+     Set here rather than as a `max-md:` utility in the JSX: page.tsx keeps only
+     the `md:` half of its arbitrary-value mt-[...], so there is no
+     equal-specificity utility to fight, and the number stays next to the
+     geometry it is derived from. Scoped to the .pb-16 child because the section
+     has three .container-x children and only the lede's takes the offset. */
+  section:has(.about-hero) .container-x.pb-16 {
+    margin-top: calc(28px - 10.973vw);
+  }
+
+  /* The breadcrumb and the lede bracket the wordmark in time the way the props
+     bracket it in space: the crumb is already there as the word arrives, the
+     lede settles in after the lens has crossed it. Both are the same rise the
+     rest of the mobile surface uses (m-route-enter), only staged — one motion
+     vocabulary for the whole phone experience.
+
+     The <h1> is not animated here: it is sr-only at every width now that the
+     stage carries the word on a phone too, and the cyan band that used to be
+     swept across it has been removed — the real loupe does that job. Every
+     selector is anchored on `section:has(.about-hero)` because the two <h2>s
+     further down the page share the <h1>'s class string. */
+  section:has(.about-hero) nav[aria-label='Breadcrumb'] {
+    animation: m-about-hero-in 500ms var(--m-ease) both;
+  }
+  section:has(.about-hero) .container-x > .max-w-3xl {
+    animation: m-about-hero-in 700ms var(--m-ease) 340ms both;
+  }
+
+  /* Reduced motion: drop the staged entrance so the copy is present
+     immediately. The lens and the props need nothing here — AboutHero parks the
+     loupe mid-word from JS and globals.css freezes the props in their slots,
+     both viewport-independent, so the desktop reduced-motion behaviour already
+     covers the phone. */
+  @media (prefers-reduced-motion: reduce) {
+    section:has(.about-hero) nav[aria-label='Breadcrumb'],
+    section:has(.about-hero) .container-x > .max-w-3xl {
+      animation: none;
+    }
+  }
+
+  /* The About page's parallax word-art is a nowrap line scrubbed sideways by
+     ±35% of its own width behind an overflow-hidden window. On a wide screen
+     that reads as drifting background texture; at 390px the window is narrower
+     than the word, so all a visitor sees is a fragment sliding past — and the
+     real heading beside it is sr-only. The artwork comes out and the real
+     <h2> becomes visible (see AboutContent.tsx). */
+  .about-parallax-text {
+    display: none;
+  }
+
+  /* ── Homepage services filter (ServicesShowcase) ─────────────────────────
+     On a phone this rail is a set of chips you flick through, not the desktop
+     sidebar it is on a wide screen. Three changes, all confined here:
+
+     1. The tagline under the active name is hidden. It is useful beside a
+        sticky desktop list; inside a horizontal chip it pushes the whole rail
+        taller and the text is cut by the chip's own width anyway.
+     2. The chip shrinks to its title — the desktop px-4/py-3 was sized for a
+        full-width sidebar row, so it left a lot of empty box around a short
+        word.
+     3. The chip gets a visible edge, so it reads as a control to tap rather
+        than as loose text. */
+  [role='tablist'] button .mt-1 {
+    display: none;
+  }
+  [role='tablist'] button {
+    min-height: 0;
+    padding: 0.4375rem 0.875rem;
+    border: 1px solid rgb(255 255 255 / 0.12);
+    border-radius: 999px;
+    background-color: rgb(255 255 255 / 0.03);
+  }
+  [role='tablist'] button.active {
+    border-color: rgb(var(--color-brand-glow) / 0.45);
+  }
+  /* The title carries the chip, so it steps down from the desktop display size
+     to a label size. */
+  [role='tablist'] button > span:first-child {
+    font-size: 0.9375rem;
+  }
+  /* Chips are their own tap targets now, so the rail can close up.
+     The arrows sit ABOVE the rail rather than floating over its ends: a
+     48px button overlapping a 44px chip hides the very label it is meant to
+     help you reach, and on a 390px screen there is no gutter to park it in. */
+  [role='tablist'] {
+    gap: 0.5rem;
+    align-items: center;
+  }
+
+  /* ── Touch ergonomics ────────────────────────────────────────────────────
+     A 44px floor on interactive elements, at specificity 0 via :where() so any
+     component class still wins — this raises the elements nobody styled, and
+     gets out of the way of the ones that were styled deliberately.
+
+     Only the block-level ones: applying a min-height to an inline <a> inside a
+     paragraph would push the line box around mid-sentence. */
+  :where(button, [role='button'], input[type='submit'], input[type='button']) {
+    min-height: 44px;
+  }
+
+  /* ── Route progress ──────────────────────────────────────────────────────
+     The bar creeps toward ~90% and waits there: it cannot know real progress,
+     so it shows that work is happening without ever claiming to be finished.
+     It is removed the moment the new route renders, which is the only honest
+     completion signal available. */
+  [data-route-progress] > * {
+    animation: m-route-progress 9s cubic-bezier(0.12, 0.8, 0.2, 1) forwards;
+  }
+
+  /* ── Route transitions ───────────────────────────────────────────────────
+     A hard cut between pages is the clearest "this is a website" tell on a
+     phone. MobilePageTransition sets data-route-enter on <main> when the path
+     changes; the motion is defined only here, so desktop keeps its instant
+     navigation. Short and transform/opacity only — a long transition on a
+     route change reads as latency, not polish. */
+  #main[data-route-enter] {
+    animation: m-route-enter 260ms var(--m-ease) both;
+  }
+
+  /* ── Header ──────────────────────────────────────────────────────────────
+     Auto-hide on scroll down, return on scroll up. Nav.tsx sets
+     data-nav-hidden from the scroll direction; the movement is defined only
+     here, so on desktop the attribute is inert and the header never moves.
+
+     Launched from the home screen there is no browser chrome, so the header
+     sits directly under the status bar — hence the safe-area top padding. */
+  #site-nav {
+    padding-top: max(0px, env(safe-area-inset-top));
+    transition:
+      transform var(--m-dur) var(--m-ease),
+      padding var(--m-dur) var(--m-ease);
+    will-change: transform;
+  }
+  #site-nav[data-nav-hidden] {
+    /* 150% so the glass pill and its shadow clear the top edge completely. */
+    transform: translateY(-150%);
+  }
+
+  /* The scrolled header's glass is white at 3% over a 24px blur. On a desktop
+     viewport it floats over the page's own dark background and that is enough
+     separation. On a phone the bar sits directly on top of running body text,
+     where 3% leaves the logo and the menu button competing with the words
+     behind them — both become hard to read.
+
+     Opaque enough to own its strip, still translucent enough that the page
+     reads as continuing underneath rather than as a solid bar bolted on. The
+     hairline and shadow do the rest of the separating. */
+  #site-nav > .container-x.glass {
+    background-color: rgb(11 13 20 / 0.82);
+    border: 1px solid rgb(255 255 255 / 0.08);
+    box-shadow: 0 10px 30px -18px rgb(0 0 0 / 0.9);
+  }
+
+  /* ── Floating chat launcher ──────────────────────────────────────────────
+     A 56px disc pinned bottom-right permanently covers a corner of every
+     screen — measured, it sits on top of headings, a phone number and footer
+     links on every route. On a wide screen there is margin to spare; on a
+     phone that corner is content.
+
+     So it behaves like a native FAB instead: full presence at rest, and while
+     the page is scrolling it shrinks and fades back to a hint. Nav.tsx already
+     publishes scroll state on the header, so this keys off the same signal
+     rather than adding a second scroll listener.
+
+     Not hidden outright — it is a real entry point, and something that
+     disappears entirely reads as broken rather than considered. */
+  /* [data-chat-launcher][data-chat-launcher] doubles the attribute to outweigh
+     the component's own Tailwind utility classes, which are single-class
+     selectors and would otherwise win on source order. */
+  html[data-scrolling] [data-chat-launcher][data-chat-launcher] {
+    opacity: 0.3;
+    transform: scale(0.8);
+  }
+  [data-chat-launcher] {
+    transition:
+      opacity var(--m-dur) var(--m-ease),
+      transform var(--m-dur) var(--m-ease);
+    /* Clear the iOS home indicator when installed to the home screen. */
+    bottom: max(1.25rem, env(safe-area-inset-bottom));
+  }
+
+  /* ── App feel ────────────────────────────────────────────────────────────
+     On a phone there is no hover state, so a tap with no feedback reads as a
+     dropped input. These give every control the brief press response a native
+     app has — transform only, so it stays on the compositor. */
+  :where(a, button, [role='button'], summary):active {
+    transform: scale(0.97);
+  }
+  :where(a, button, [role='button'], summary) {
+    transition: transform var(--m-dur-micro) var(--m-ease);
+  }
+  /* Cards and list rows press as a whole rather than scaling their text. */
+  :where(.glass):active {
+    transform: scale(0.99);
+  }
+
+  /* The grey flash iOS paints over a tapped link — replaced by the press
+     scale above, which is faster and matches the brand. */
+  a,
+  button,
+  [role='button'],
+  summary,
+  input,
+  select,
+  textarea {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Text selection on long-press is for text. On chrome (nav, buttons, the
+     decorative scenes) it is an accidental gesture that breaks the illusion of
+     an app, so it is disabled there and left on for real content. */
+  :where(header, nav, button, [role='button'], .brand-orbit, [aria-hidden='true']) {
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  /* Scroll: stop a bounce at the end of a scroller from chaining to the page
+     behind it (and, in standalone mode, from triggering pull-to-refresh
+     mid-gesture). `overscroll-behavior-y: contain` keeps the rubber-band —
+     which feels native — without the chaining. */
+  /* NOTE: no `overscroll-behavior-y` on <body>. Constraining the root
+     scroller's vertical overscroll interacts badly with Lenis on Android
+     Chrome; the panes that actually need containment set it themselves
+     below. */
+  :where([class*='overflow-y-auto'], [class*='overflow-x-auto'], [class*='overflow-auto']) {
+    overscroll-behavior: contain;
+    /* Momentum scrolling inside panes on older iOS. */
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Horizontal rails (the showcase filters, the case-study tablist, gallery
+     strips) get snap points so a flick lands on an item instead of drifting
+     between two. */
+  :where([class*='overflow-x-auto']) {
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+  }
+  :where([class*='overflow-x-auto'])::-webkit-scrollbar {
+    display: none;
+  }
+  :where([class*='overflow-x-auto']) > * {
+    scroll-snap-align: start;
+  }
+
+  /* A rail whose last item is sliced by the viewport edge looks like a layout
+     bug. Fading the trailing edge turns that same cut into the standard "there
+     is more this way" signal — and it costs no vertical space, which a row of
+     dots or arrows would.
+
+     mask rather than an overlay gradient: the rails sit on several different
+     backgrounds (glass cards, the page, a tinted section), and a painted
+     gradient would have to match each one. The fade only appears once the
+     content actually overflows, because a fully-scrolled rail needs no hint. */
+  :where([class*='overflow-x-auto']) {
+    -webkit-mask-image: linear-gradient(
+      to right,
+      transparent 0,
+      #000 1.25rem,
+      #000 calc(100% - 2.5rem),
+      transparent 100%
+    );
+    mask-image: linear-gradient(
+      to right,
+      transparent 0,
+      #000 1.25rem,
+      #000 calc(100% - 2.5rem),
+      transparent 100%
+    );
+  }
+  /* The showcase filter rail bleeds into the gutters with -mx-6/px-6, so its
+     leading edge starts flush and needs no lead-in fade. */
+  :where(.\-mx-6[class*='overflow-x-auto']) {
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 3rem), transparent 100%);
+    mask-image: linear-gradient(to right, #000 calc(100% - 3rem), transparent 100%);
+  }
+
+  /* Kills the ~300ms double-tap-to-zoom delay on every tap target. */
+  a,
+  button,
+  [role='button'],
+  input,
+  select,
+  textarea {
+    touch-action: manipulation;
+  }
+
+  /* iOS Safari zooms the whole page in when a focused field's text is under
+     16px. The two components with real forms (ContactForm, ChatWidget) set
+     `text-base md:text-…` at source; this catches any field that does not, at
+     specificity 0 so those deliberate choices still win. */
+  :where(input, select, textarea) {
+    font-size: max(16px, 1em);
+  }
+}
+
+/* Keyframes for the mobile route entrance. Defined outside the media query —
+   an @keyframes block declares an animation but applies nothing on its own, so
+   this reaches no desktop element: only the #main[data-route-enter] rule above,
+   which is inside the query, ever references it. */
+@keyframes m-route-enter {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 10px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+/* Route-progress creep. Outside the media query for the same reason as
+   m-route-enter: @keyframes declares an animation but applies nothing on its
+   own, and only the mobile-scoped rule above ever references it. */
+@keyframes m-route-progress {
+  0% {
+    transform: scaleX(0.02);
+  }
+  40% {
+    transform: scaleX(0.55);
+  }
+  100% {
+    transform: scaleX(0.92);
+  }
+}
+
+/* About hero entrance (mobile). Outside the media query for the same reason as
+   the two above: @keyframes declares an animation but applies nothing on its
+   own, so only the phone-scoped rules that reference it are ever affected.
+
+   The rise is deliberately the same shape as m-route-enter — the hero arrives
+   as part of the page, not as a separate performance on top of it. */
+@keyframes m-about-hero-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 12px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}

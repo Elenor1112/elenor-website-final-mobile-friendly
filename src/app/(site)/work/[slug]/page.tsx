@@ -104,7 +104,7 @@ export default async function CaseStudyPage({ params }: { params: { slug: string
 
       {c.metrics.length > 0 ? (
         <section className="border-b border-white/10 bg-white/[0.02] py-16">
-          <div className="container-x grid grid-cols-2 gap-8 md:grid-cols-4">
+          <div className="container-x grid grid-cols-2 gap-8 max-md:grid-cols-1 max-md:gap-6 md:grid-cols-4">
             {c.metrics.map((m) => (
               <div key={m.label}>
                 <p className="font-display text-4xl font-bold text-gradient">{m.value}</p>

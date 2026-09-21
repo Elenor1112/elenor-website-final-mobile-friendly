@@ -198,7 +198,7 @@ export function BlogAnimation() {
       <div className="container-x relative">
         <div className="flex flex-col gap-12 md:flex-row md:items-center md:justify-between">
           {/* ── TitleText — static, server-rendered, never animated ── */}
-          <div className="relative z-10 -translate-y-[25%]">
+          <div className="relative z-10 -translate-y-[25%] max-md:translate-y-0">
             <h1 className="text-balance font-display text-4xl font-bold leading-[1.02] tracking-tight text-white md:text-6xl">
               Insights. Not filler.
             </h1>

@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import Image from 'next/image';
 import { BlogAnimation } from '@/components/BlogAnimation';
 import { JsonLd } from '@/components/JsonLd';
 import { Reveal } from '@/components/Reveal';
@@ -73,13 +74,22 @@ export default async function BlogPage() {
                   </p>
                 </div>
                 {lead.coverImage ? (
-                  <img
-                    src={lead.coverImage.url}
-                    alt={lead.coverImage.alt}
-                    loading="lazy"
-                    decoding="async"
-                    className="hidden rounded-2xl object-cover md:block"
-                  />
+                  // Shown on phones too (it used to be md-only, leaving a
+                  // text-only featured card). The aspect box reserves the space
+                  // before the file loads, so there is no shift; order -1 lifts
+                  // it above the copy, where a lead image belongs. next/image
+                  // with `fill` so a CMS upload of unknown size is still served
+                  // at the rendered width.
+                  <span className="relative block overflow-hidden rounded-2xl max-md:order-[-1] max-md:mb-6 max-md:aspect-[16/10] max-md:w-full">
+                    <Image
+                      src={lead.coverImage.url}
+                      alt={lead.coverImage.alt}
+                      fill
+                      sizes="(max-width: 767px) 100vw, 50vw"
+                      loading="lazy"
+                      className="object-cover"
+                    />
+                  </span>
                 ) : (
                   <div className="hidden rounded-2xl bg-gradient-to-br from-brand/30 via-ink to-brand-cyan/20 md:block" />
                 )}

@@ -115,9 +115,12 @@ function CenterMark({ text }: { text: string }) {
       src={elenorLogo}
       alt={text}
       className="brand-orbit__center"
-      // Rendered at ~56.7rem max; keeps next/image (sharp) serving a small
-      // variant instead of the 3508px source.
-      sizes="1900px"
+      // The style below sizes the mark at 100vw between its two bounds, so
+      // `sizes` tracks the viewport rather than naming one fixed width: a
+      // literal 1900px made every phone download the 1900px variant for a
+      // 390px-wide slot. Capped at the 113.4rem (1814px) upper bound so wide
+      // screens still stop short of the 3508px source.
+      sizes="(max-width: 1814px) 100vw, 1814px"
       priority
       // 2× the previous size (24.3rem / 59.4vw / 56.7rem). The fluid term is
       // held at 100vw rather than a literal 118.8vw: doubling it would make the
@@ -242,8 +245,31 @@ export function BrandOrbit({
     };
     raf = requestAnimationFrame(frame);
 
+    // Eleven orbs, each written every frame, for as long as the page is open —
+    // including the whole time the orbit is scrolled past. Stop the loop
+    // outright when it leaves the viewport rather than easing it to zero, so
+    // an off-screen decoration costs nothing. `last` is reset on resume
+    // because the dt clamp alone would still take a visible moment to unwind a
+    // long gap.
+    let onScreen = true;
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting === onScreen) return;
+        onScreen = entry.isIntersecting;
+        if (onScreen) {
+          last = performance.now();
+          raf = requestAnimationFrame(frame);
+        } else {
+          cancelAnimationFrame(raf);
+        }
+      },
+      { rootMargin: '100px' },
+    );
+    io.observe(stage);
+
     return () => {
       cancelAnimationFrame(raf);
+      io.disconnect();
       ro.disconnect();
     };
   }, [reduceMotion, list.length]);

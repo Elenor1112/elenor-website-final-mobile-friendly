@@ -40,6 +40,23 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     metadataBase: new URL(site.url),
     title: { default: site.name, template: `%s | ${site.name}` },
+    // Home-screen install. `appleWebApp` is what lets iOS launch the site
+    // without Safari's chrome; `black-translucent` puts the page under the
+    // status bar, which is why the nav carries safe-area padding in
+    // mobile.css. Metadata only — nothing here renders on desktop.
+    manifest: '/manifest.webmanifest',
+    appleWebApp: {
+      capable: true,
+      title: site.name,
+      statusBarStyle: 'black-translucent',
+    },
+    icons: {
+      icon: [
+        { url: '/icons/favicon-32.png', sizes: '32x32', type: 'image/png' },
+        { url: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' },
+      ],
+      apple: [{ url: '/icons/apple-touch-icon.png', sizes: '180x180' }],
+    },
   };
 }
 
@@ -47,6 +64,11 @@ export const viewport: Viewport = {
   themeColor: '#05060a',
   width: 'device-width',
   initialScale: 1,
+  // Lets the page paint under a notch/home indicator and, more importantly,
+  // makes env(safe-area-inset-*) resolve to real values — without it those
+  // read 0 and the mobile nav/footer padding would collapse. No effect on a
+  // desktop viewport, which has no insets.
+  viewportFit: 'cover',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

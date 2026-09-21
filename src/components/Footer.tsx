@@ -21,7 +21,7 @@ export async function Footer() {
   ].filter((s) => s.href);
 
   return (
-    <footer className="relative z-10 border-t border-white/10 pb-10 pt-20">
+    <footer className="relative z-10 border-t border-white/10 pb-10 pt-20 max-md:pt-14 max-md:[padding-bottom:max(2.5rem,env(safe-area-inset-bottom))]">
       <div className="container-x">
         <div className="grid gap-12 lg:grid-cols-[1.4fr_1fr_1fr_1fr]">
           <div className="flex flex-col items-start text-left">
@@ -32,12 +32,12 @@ export async function Footer() {
               {site.tagline}. A full-service marketing and brand agency in{' '}
               {site.address.locality}, {site.address.region}, since {site.foundingYear}.
             </p>
-            <div className="mt-6 flex gap-4 text-white/60">
+            <div className="mt-6 flex gap-4 text-white/60 max-md:-ml-3 max-md:gap-1">
               {socials.map(({ label, href, Icon }) => (
                 <a
                   key={label}
                   href={href}
-                  className="transition-colors hover:text-white"
+                  className="transition-colors hover:text-white max-md:grid max-md:h-11 max-md:w-11 max-md:place-items-center"
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label={label}
@@ -68,10 +68,16 @@ export async function Footer() {
           </FooterCol>
 
           <FooterCol title="Get in touch">
-            <a href={`tel:${site.phone}`} className="block text-sm text-white/55 hover:text-white">
+            <a
+              href={`tel:${site.phone}`}
+              className="block text-sm text-white/55 hover:text-white max-md:-my-3 max-md:flex max-md:min-h-[44px] max-md:items-center max-md:py-3"
+            >
               {site.phoneDisplay}
             </a>
-            <a href={`mailto:${site.email}`} className="block text-sm text-white/55 hover:text-white">
+            <a
+              href={`mailto:${site.email}`}
+              className="block text-sm text-white/55 hover:text-white max-md:-my-3 max-md:flex max-md:min-h-[44px] max-md:items-center max-md:py-3"
+            >
               {site.email}
             </a>
             <p className="text-sm leading-relaxed text-white/55">
@@ -103,14 +109,20 @@ function FooterCol({ title, children }: { title: string; children: React.ReactNo
       <h3 className="text-xs font-semibold uppercase tracking-[0.18em] text-white/40">
         {title}
       </h3>
-      <div className="mt-5 flex flex-col gap-3">{children}</div>
+      <div className="mt-5 flex flex-col gap-3 max-md:mt-3 max-md:gap-0">{children}</div>
     </div>
   );
 }
 
 function FooterLink({ href, children }: { href: string; children: React.ReactNode }) {
   return (
-    <Link href={href} className="text-sm text-white/55 transition-colors hover:text-white">
+    // max-md:py-3 / -my-3: on a phone the row is a 44px tap target, while the
+    // negative margin pulls the surrounding gap back so the column's visual
+    // rhythm is unchanged. Desktop keeps the bare 20px line.
+    <Link
+      href={href}
+      className="text-sm text-white/55 transition-colors hover:text-white max-md:-my-3 max-md:flex max-md:min-h-[44px] max-md:items-center max-md:py-3"
+    >
       {children}
     </Link>
   );

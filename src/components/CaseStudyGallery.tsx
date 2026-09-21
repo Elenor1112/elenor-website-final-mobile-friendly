@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import Image from 'next/image';
 import { YouTubeEmbed } from './YouTubeEmbed';
 import { ModelMedia } from './three/ModelMedia';
 import type { PublicGalleryItem } from '@/lib/data/work';
@@ -185,15 +186,23 @@ export function CaseStudyGallery({ caseStudy }: CaseStudyGalleryProps) {
                   aria-label={`View full-size: ${alt}`}
                   className="block w-full overflow-hidden rounded-lg transition duration-300 hover:scale-[1.02] hover:shadow-[0_16px_40px_-16px_rgba(0,0,0,0.8)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-cyan"
                 >
-                  {/* Plain <img>: gallery paths are static placeholders in
-                      /public, so the next/image optimizer adds nothing here. */}
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={item.url}
-                    alt={alt}
-                    loading="lazy"
-                    className="aspect-[4/3] w-full rounded-lg bg-white/[0.04] object-cover"
-                  />
+                  {/* next/image with `fill`: the tiles are 2-4 per row but the
+                      source photography is full-resolution (several are ~1MB),
+                      so unoptimized a phone downloads megabytes to fill ~130px
+                      boxes. Being under /public does not exempt them — the
+                      optimizer resizes static paths too. `fill` inside the
+                      existing aspect box keeps the rendered geometry identical
+                      to the <img> it replaces. */}
+                  <span className="relative block aspect-[4/3] w-full overflow-hidden rounded-lg bg-white/[0.04]">
+                    <Image
+                      src={item.url}
+                      alt={alt}
+                      fill
+                      sizes="(max-width: 767px) 50vw, (max-width: 1023px) 33vw, 25vw"
+                      loading="lazy"
+                      className="object-cover"
+                    />
+                  </span>
                 </button>
               </li>
             );

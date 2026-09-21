@@ -4,6 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useRef, type CSSProperties } from 'react';
 import { gsap } from 'gsap';
+import { pauseContextOffscreen } from '@/lib/pauseContextOffscreen';
 
 import { SERVICE_ICONS } from '@/lib/serviceIcons';
 
@@ -447,7 +448,12 @@ export function ServicesAnimation() {
       });
     }, container);
 
+    // The ring/gear spins run on repeat:-1 and would otherwise keep
+    // writing transforms while the section is scrolled past.
+    const unobserve = pauseContextOffscreen(container, ctx);
+
     return () => {
+      unobserve();
       ctx.revert();
     };
   }, []);
@@ -458,7 +464,12 @@ export function ServicesAnimation() {
   // ORBIT_MARGIN on the stage below, which reserves that room in the layout so
   // no fixed padding here has to guess at it.
   return (
-    <section ref={containerRef} className="relative overflow-hidden border-b border-white/10 pb-24 pt-36 md:pt-44">
+    // max-md:pb-8: the ring's aspect box already reserves ORBIT_MARGIN of empty
+    // space below the artwork for the orbit overhang, so the section's own
+    // pb-24 stacks on top of it and opens a ~145px void above the service
+    // cards on a phone. Desktop keeps pb-24, where that breathing room reads
+    // as deliberate rather than as a gap.
+    <section ref={containerRef} className="relative overflow-hidden border-b border-white/10 pb-24 pt-36 max-md:pb-8 max-md:pt-24 md:pt-44">
       {/* Background glow — same treatment as PageShell so the services hero
           sits flush with every other inner page header. */}
       <div
@@ -528,7 +539,12 @@ export function ServicesAnimation() {
               actually has a neighbour. */}
           <div className="flex justify-center md:justify-end md:pr-4 lg:pr-8">
             <div
-              className="relative w-full max-w-[34rem] md:w-[var(--stage-w)]"
+              // max-md:w-[86%]: below md the ring is allowed to overhang into
+              // the page gutters (see the note above), but at 320-430px those
+              // gutters are the whole margin — the outermost icons ended up
+              // touching both screen edges. Insetting the stage keeps the same
+              // composition with room around it.
+              className="relative w-full max-w-[34rem] max-md:w-[86%] md:w-[var(--stage-w)]"
               style={
                 {
                   '--stage-w': `${STAGE_PCT}%`,

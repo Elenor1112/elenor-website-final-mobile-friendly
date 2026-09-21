@@ -495,7 +495,11 @@ function CeoWord({
             ) : null}
             {/* mt-auto drops the attribution to the bottom of the text column,
                 so it lines up with the bottom of the card. */}
-            <div className="mt-auto pt-10 text-right">
+            {/* Left-aligned on a phone: right-aligning pushes the name into the
+                gutter where the floating chat launcher sits, and at this
+                measure the attribution reads better on the same axis as the
+                quote it belongs to. */}
+            <div className="mt-auto pt-10 text-right max-md:pt-6 max-md:text-left">
               <p className="font-display text-lg font-semibold text-white md:text-xl">{name}</p>
               {role ? (
                 <p className="mt-1 text-sm font-semibold uppercase tracking-[0.15em] text-brand-glow">
@@ -529,7 +533,7 @@ function TailoredStory({
     <div ref={ref} className="mx-auto max-w-3xl">
       {/* The section heading lives in the parallax artwork above, so the real
           h2 stays sr-only — and outside the card, which holds only the copy. */}
-      <h2 data-reveal className="sr-only">
+      <h2 data-reveal className="sr-only max-md:not-sr-only max-md:mb-4 max-md:block max-md:font-display max-md:text-[1.6875rem] max-md:font-semibold max-md:leading-[1.15] max-md:tracking-tight">
         {heading}
       </h2>
       {/* Unlike the CEO quote above, this copy sits directly on the page with
@@ -584,6 +588,19 @@ function BrandPhilosophy({
 }) {
   const rootRef = useRef<HTMLDivElement>(null);
   const [active, setActive] = useState<string | null>(null);
+  // On a touch screen a tap emits mouseenter and then click, so the pair of
+  // handlers below would open the panel and the click would immediately close
+  // it again — the pillar looked unresponsive on a phone. Hover intent only
+  // exists on a device that can hover, so the mouse handlers are bound only
+  // there and touch is left to the click handler alone.
+  const [canHover, setCanHover] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia('(hover: hover) and (pointer: fine)');
+    const sync = () => setCanHover(mq.matches);
+    sync();
+    mq.addEventListener('change', sync);
+    return () => mq.removeEventListener('change', sync);
+  }, []);
 
   useEffect(() => {
     const el = rootRef.current;
@@ -612,7 +629,7 @@ function BrandPhilosophy({
 
   return (
     <div ref={rootRef}>
-      <h2 className="sr-only">{heading}</h2>
+      <h2 className="sr-only max-md:not-sr-only max-md:mb-4 max-md:block max-md:font-display max-md:text-[1.6875rem] max-md:font-semibold max-md:leading-[1.15] max-md:tracking-tight">{heading}</h2>
       <div className="grid grid-cols-2 gap-6 sm:gap-8 md:grid-cols-4">
         {pillars.map((pillar) => {
           const isActive = active === pillar.key;
@@ -621,8 +638,12 @@ function BrandPhilosophy({
               key={pillar.key}
               type="button"
               data-icon
-              onMouseEnter={() => !reduced && setActive(pillar.key)}
-              onMouseLeave={() => !reduced && setActive((cur) => (cur === pillar.key ? null : cur))}
+              onMouseEnter={canHover && !reduced ? () => setActive(pillar.key) : undefined}
+              onMouseLeave={
+                canHover && !reduced
+                  ? () => setActive((cur) => (cur === pillar.key ? null : cur))
+                  : undefined
+              }
               onFocus={() => setActive(pillar.key)}
               onBlur={() => setActive((cur) => (cur === pillar.key ? null : cur))}
               onClick={() => setActive((cur) => (cur === pillar.key ? null : pillar.key))}
@@ -633,7 +654,7 @@ function BrandPhilosophy({
               }`}
             >
               <span
-                className={`relative h-[6.25rem] w-[6.25rem] shrink-0 transition-transform duration-300 md:h-[7.8125rem] md:w-[7.8125rem] ${
+                className={`relative h-[6.25rem] w-[6.25rem] shrink-0 transition-transform duration-300 max-md:h-[4.5rem] max-md:w-[4.5rem] md:h-[7.8125rem] md:w-[7.8125rem] ${
                   isActive ? 'scale-110' : 'group-hover:scale-105'
                 }`}
               >

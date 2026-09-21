@@ -52,15 +52,15 @@ export default async function ContactPage() {
             <div className="rounded-3xl glass p-8">
               <h2 className="font-display text-xl font-semibold">Reach us directly</h2>
               <div className="mt-6 space-y-4 text-sm">
-                <a href={`tel:${site.phone}`} className="flex items-center justify-between text-white/70 hover:text-white">
+                <a href={`tel:${site.phone}`} className="max-md:-my-2.5 max-md:min-h-[44px] max-md:py-2.5 flex items-center justify-between text-white/70 hover:text-white">
                   <span>Phone</span>
                   <span className="text-white">{site.phoneDisplay}</span>
                 </a>
-                <a href={site.whatsapp} target="_blank" rel="noopener noreferrer" className="flex items-center justify-between text-white/70 hover:text-white">
+                <a href={site.whatsapp} target="_blank" rel="noopener noreferrer" className="max-md:-my-2.5 max-md:min-h-[44px] max-md:py-2.5 flex items-center justify-between text-white/70 hover:text-white">
                   <span>WhatsApp</span>
                   <span className="text-brand-cyan">Message us →</span>
                 </a>
-                <a href={`mailto:${site.email}`} className="flex items-center justify-between text-white/70 hover:text-white">
+                <a href={`mailto:${site.email}`} className="max-md:-my-2.5 max-md:min-h-[44px] max-md:py-2.5 flex items-center justify-between text-white/70 hover:text-white">
                   <span>Email</span>
                   <span className="text-white">{site.email}</span>
                 </a>

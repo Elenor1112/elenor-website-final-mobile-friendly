@@ -17,7 +17,28 @@ const BRAND = 'elenor';
 // every path that hides the intro must also bring the nav back.
 const HIDE_CSS = '#elenor-intro{display:none}#site-nav{visibility:visible!important}';
 
-const SKIP_SCRIPT = `(function(){try{if(localStorage.getItem('${STORAGE_KEY}')||window.matchMedia('(prefers-reduced-motion: reduce)').matches){var s=document.createElement('style');s.textContent='${HIDE_CSS}';document.head.appendChild(s);}}catch(e){}})();`;
+// The overlay is server-rendered, so it covers the page from first paint until
+// React hydrates and the animation takes over. On a fast connection that gap is
+// imperceptible. On a throttled handset it is not: hydration was still pending
+// ten seconds in, and because the overlay's words are set in a webfont that had
+// not arrived either, the visitor spent that whole time looking at an
+// unbroken black screen — indistinguishable from a site that failed to load.
+//
+// The watchdog below therefore lives in this pre-paint script rather than in
+// the effect, because the effect is exactly the thing that has not run yet.
+// If the animation has not claimed the overlay within 2.5s, the page is
+// revealed and the intro is retired for good. A visitor on a slow connection
+// simply never sees it, which is the correct trade: it is decorative, it plays
+// once, and the real content is already sitting underneath.
+//
+// `data-intro-armed` is set by the animation as soon as it starts, and is what
+// tells the watchdog to stand down.
+const SKIP_SCRIPT = `(function(){try{var H='${HIDE_CSS}';var K='${STORAGE_KEY}';
+function hide(){var s=document.createElement('style');s.textContent=H;document.head.appendChild(s);}
+if(localStorage.getItem(K)||window.matchMedia('(prefers-reduced-motion: reduce)').matches){hide();return;}
+setTimeout(function(){var el=document.getElementById('elenor-intro');
+if(el&&!el.hasAttribute('data-intro-armed')){try{localStorage.setItem(K,'1');}catch(e){}hide();}},2500);
+}catch(e){}})();`;
 
 function hideIntroPermanently() {
   const style = document.createElement('style');
@@ -57,10 +78,15 @@ export function IntroAnimation() {
       return;
     }
 
+    const coarse = window.matchMedia('(pointer: coarse)').matches;
+
     const overlay = overlayRef.current;
     const phrase = phraseRef.current;
     const word = wordRef.current;
     if (!overlay || !phrase || !word) return;
+
+    // Tell the pre-paint watchdog to stand down: the animation is running.
+    overlay.setAttribute('data-intro-armed', '');
 
     const words = Array.from(phrase.querySelectorAll<HTMLElement>('[data-word]'));
     const letters = Array.from(phrase.querySelectorAll<HTMLElement>('[data-letter]'));
@@ -86,7 +112,16 @@ export function IntroAnimation() {
 
     let assembleTl: gsap.core.Timeline | undefined;
 
+    // The ONLY exit from the overlay. Every escape route below routes through
+    // it, because it is what restarts Lenis and restores the nav — leaving the
+    // overlay by any other path strands the page with overflow:hidden and a
+    // hidden header (see the body:has(#elenor-intro) rule in globals.css).
+    let finished = false;
+    let watchdog: number | undefined;
     const finish = () => {
+      if (finished) return;
+      finished = true;
+      window.clearTimeout(watchdog);
       try {
         localStorage.setItem(STORAGE_KEY, '1');
       } catch {}
@@ -94,6 +129,17 @@ export function IntroAnimation() {
       lenis?.start();
       setDone(true);
     };
+
+    // Act 2 measures each letter's flight path from live layout and skips any
+    // letter it cannot find. On a slow or throttled device that chain can
+    // stall, and because scroll is frozen until finish() runs, a stall leaves
+    // the page permanently unscrollable with no navigation. The watchdog is
+    // the guarantee that cannot happen: worst case the intro is cut short.
+    watchdog = window.setTimeout(finish, 6000);
+
+    // Nobody should be held hostage by an intro. A tap or click anywhere
+    // exits immediately.
+    overlay.addEventListener('pointerdown', finish);
 
     // Act 2+3 are built only after the phrase has settled, because the letter
     // flight paths are measured from live layout (works at any viewport size
@@ -123,6 +169,7 @@ export function IntroAnimation() {
       const flyers = flights.map((f) => f.el);
 
       assembleTl = gsap.timeline({ onComplete: finish });
+      if (coarse) assembleTl.timeScale(1.6);
 
       // Leftover letters tumble off the bottom while the chosen six fly.
       assembleTl.to(
@@ -166,7 +213,12 @@ export function IntroAnimation() {
     };
 
     // Act 1 — the tagline falls in and settles.
+    // Phones run the same choreography at 1.6x, because the full ~3.5s holds
+    // scroll frozen behind a splash screen — patience a desktop visitor
+    // extends and a phone visitor answers by leaving. Scaling the timeline
+    // rather than branching keeps one set of choreography to maintain.
     const fallTl = gsap.timeline({ delay: 0.15 });
+    if (coarse) fallTl.timeScale(1.6);
     fallTl
       .to(words, {
         y: 0,
@@ -178,6 +230,8 @@ export function IntroAnimation() {
       .add(assemble, '+=0.3');
 
     return () => {
+      window.clearTimeout(watchdog);
+      overlay.removeEventListener('pointerdown', finish);
       fallTl.kill();
       assembleTl?.kill();
       lenis?.start();

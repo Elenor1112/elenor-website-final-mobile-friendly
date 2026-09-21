@@ -24,19 +24,19 @@ export async function PageShell({
   return (
     <>
       <JsonLd data={breadcrumbSchema([{ name: 'Home', path: '/' }, ...crumbs], site.url)} />
-      <section className="relative overflow-hidden border-b border-white/10 pb-16 pt-36 md:pt-44">
+      <section className="relative overflow-hidden border-b border-white/10 pb-16 pt-36 max-md:pb-10 max-md:pt-28 md:pt-44">
         <div
           className="pointer-events-none absolute -top-40 right-0 h-[30rem] w-[30rem] rounded-full opacity-30 blur-[120px]"
           style={{ background: 'radial-gradient(circle, #68cad6 0%, transparent 70%)' }}
           aria-hidden
         />
         <div className="container-x relative">
-          <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-2 text-xs text-white/40">
-            <Link href="/" className="hover:text-white">Home</Link>
+          <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-2 text-xs text-white/40 max-md:-my-2.5">
+            <Link href="/" className="hover:text-white max-md:inline-flex max-md:min-h-[44px] max-md:items-center">Home</Link>
             {crumbs.map((c) => (
               <span key={c.path} className="flex items-center gap-2">
                 <span aria-hidden>/</span>
-                <Link href={c.path} className="hover:text-white">{c.name}</Link>
+                <Link href={c.path} className="hover:text-white max-md:inline-flex max-md:min-h-[44px] max-md:items-center">{c.name}</Link>
               </span>
             ))}
           </nav>

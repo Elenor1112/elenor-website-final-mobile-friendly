@@ -41,7 +41,7 @@ export const industries = [
   'FMCG',
   'Food & Beverages',
   'Automotive',
-  'Production',
+  'Media Production',
   'Law Firms',
   'Institutions',
   'Home Appliances',
@@ -64,8 +64,8 @@ export const clientRoster: RosterClient[] = [
   { name: 'VCC', industries: ['Healthcare'] },
   // Automotive
   { name: 'Four Whales', industries: ['Automotive'] },
-  // Production
-  { name: 'Icon', industries: ['Production'] },
+  // Media Production
+  { name: 'Icon', industries: ['Media Production'] },
   // Law Firms
   { name: 'H&Z Law Firm', industries: ['Law Firms'] },
   { name: 'Ehab Makram', industries: ['Law Firms'] },
@@ -157,7 +157,7 @@ export const caseStudies: CaseStudy[] = [
   {
     slug: 'mmec-web',
     client: 'MMEC',
-    industry: 'Industrial',
+    industry: 'Real Estate & Constructions',
     services: ['Web & App Development'],
     categories: ['Web & App Development'],
     result: 'A fast, mobile-first corporate site with an SEO-ready foundation.',
@@ -333,7 +333,7 @@ export const caseStudies: CaseStudy[] = [
   {
     slug: 'videology',
     client: 'Videology',
-    industry: 'Production',
+    industry: 'Media Production',
     services: ['Brand Identity', 'Web & App Development'],
     categories: ['Brand Identity', 'Web & App Development'],
     result:
@@ -342,7 +342,7 @@ export const caseStudies: CaseStudy[] = [
   {
     slug: 'cbre-interior',
     client: 'CBRE',
-    industry: 'Real Estate & Constructions',
+    industry: 'Institutions',
     services: ['Interior Design'],
     categories: ['Interior Design'],
     result: 'A refined interior fit-out for a global commercial real-estate leader.',

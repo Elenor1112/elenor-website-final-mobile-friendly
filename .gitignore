@@ -8,3 +8,5 @@ out/
 .vercel
 venv/
 .venv/
+dev.log
+*.log

@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import elenorLogo from '@/assets/elenor logo For Web-03.png';
+import { MobileNav } from '@/components/MobileNav';
+import { useMobileRuntime } from '@/hooks/useMobileRuntime';
 
 export type NavLinkItem = { href: string; label: string };
 
@@ -24,18 +26,65 @@ export function Nav({
   cta?: NavLinkItem | null;
 }) {
   const [scrolled, setScrolled] = useState(false);
-  const [open, setOpen] = useState(false);
+  // Scroll direction, surfaced as a data attribute rather than a class so the
+  // styling lives entirely in mobile.css: on a phone the header slides away
+  // while reading down and returns on the first upward flick, the way app
+  // chrome behaves. Desktop reads the attribute and does nothing with it, so
+  // its rendering is untouched.
+  const [hidden, setHidden] = useState(false);
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 24);
+    let last = window.scrollY;
+    let ticking = false;
+    let idle: number | undefined;
+
+    const update = () => {
+      ticking = false;
+      const y = window.scrollY;
+      setScrolled(y > 24);
+
+      const delta = y - last;
+      // Ignore sub-pixel jitter and the iOS rubber-band past the top.
+      if (Math.abs(delta) < 6 || y < 0) return;
+      // Never hide near the top: the header is part of the hero there.
+      if (y < 120) setHidden(false);
+      else setHidden(delta > 0);
+      last = y;
+    };
+
+    // A separate "is the page moving right now" flag, published on <html> for
+    // the mobile layer. The floating chat launcher recedes while scrolling and
+    // comes back once the page settles — keyed off motion rather than off
+    // scroll direction, so it clears content whichever way the reader is going.
+    const markScrolling = () => {
+      document.documentElement.setAttribute('data-scrolling', '');
+      window.clearTimeout(idle);
+      idle = window.setTimeout(
+        () => document.documentElement.removeAttribute('data-scrolling'),
+        220,
+      );
+    };
+
+    const onScroll = () => {
+      markScrolling();
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(update);
+    };
+
     window.addEventListener('scroll', onScroll, { passive: true });
-    onScroll();
-    return () => window.removeEventListener('scroll', onScroll);
+    update();
+    return () => {
+      window.clearTimeout(idle);
+      document.documentElement.removeAttribute('data-scrolling');
+      window.removeEventListener('scroll', onScroll);
+    };
   }, []);
 
   return (
     <header
       id="site-nav"
+      data-nav-hidden={hidden ? '' : undefined}
       className={`fixed inset-x-0 top-0 z-[65] transition-all duration-500 ${
         scrolled ? 'py-3' : 'py-5'
       }`}
@@ -77,41 +126,23 @@ export function Nav({
           </div>
         ) : null}
 
-        <button
-          className="grid h-10 w-10 place-items-center rounded-full glass md:hidden"
-          onClick={() => setOpen((v) => !v)}
-          aria-label="Toggle menu"
-          aria-expanded={open}
-        >
-          <span className="text-lg">{open ? '✕' : '☰'}</span>
-        </button>
+        <MobileNavMount links={links} cta={cta} />
       </div>
-
-      {open && (
-        <div className="container-x mt-3 md:hidden">
-          <nav className="flex flex-col gap-1 rounded-2xl glass p-3">
-            {links.map((l) => (
-              <Link
-                key={l.href}
-                href={l.href}
-                onClick={() => setOpen(false)}
-                className="rounded-xl px-4 py-3 text-sm text-white/80 hover:bg-white/5"
-              >
-                {l.label}
-              </Link>
-            ))}
-            {cta ? (
-              <Link
-                href={cta.href}
-                onClick={() => setOpen(false)}
-                className="mt-1 rounded-xl bg-brand px-4 py-3 text-center text-sm font-semibold text-white"
-              >
-                {cta.label}
-              </Link>
-            ) : null}
-          </nav>
-        </div>
-      )}
     </header>
   );
+}
+
+/**
+ * Mounts the phone navigation only on phones.
+ *
+ * Deliberately a mount gate and not `md:hidden`: `display:none` hides an
+ * element but still mounts it and runs its effects, so a hidden MobileNav
+ * would lock scroll and trap focus on desktop too. Rendering nothing until the
+ * media query is known also keeps the server and first client render identical
+ * — the sheet is closed at rest, so its arrival one frame later is invisible.
+ */
+function MobileNavMount({ links, cta }: { links: NavLinkItem[]; cta?: NavLinkItem | null }) {
+  const isMobile = useMobileRuntime();
+  if (!isMobile) return null;
+  return <MobileNav links={links} cta={cta} />;
 }

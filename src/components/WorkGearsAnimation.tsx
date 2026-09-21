@@ -4,6 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useRef } from 'react';
 import { gsap } from 'gsap';
+import { pauseContextOffscreen } from '@/lib/pauseContextOffscreen';
 
 import { WORK_GEARS, WORK_GEAR_LABELS, HUB_RATIO, type WorkGearKey } from '@/lib/workGears';
 
@@ -318,7 +319,12 @@ export function WorkGearsAnimation() {
       });
     }, container);
 
+    // The ring/gear spins run on repeat:-1 and would otherwise keep
+    // writing transforms while the section is scrolled past.
+    const unobserve = pauseContextOffscreen(container, ctx);
+
     return () => {
+      unobserve();
       ctx.revert();
     };
   }, []);

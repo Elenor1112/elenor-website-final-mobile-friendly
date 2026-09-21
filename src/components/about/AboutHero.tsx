@@ -77,6 +77,12 @@ const SWEEP_RIGHT_FALLBACK = 810;
  * animated from there — see the join phase in the rAF loop. globals.css no
  * longer inlines this number: the plane offset and the wordmark's mask hole
  * both read --lens-y, which the loop writes per frame.
+ *
+ * Now only a SEED. The baseline is measured off the rendered letters in the
+ * measure effect (lensCyRef) because the fitted value assumed type that scaled
+ * with the stage, which .about-hero__wordtext no longer does — so a fixed
+ * stage-px height drifts off the letters as the viewport changes. This value
+ * still covers the frames before the first measurement lands.
  */
 const LENS_CY = 169;
 
@@ -223,7 +229,15 @@ const WORDMARK_TEXT = 'About us';
 
 /** font-size, as a fraction of stage width, that makes "About us" in
  *  font-display (Sora) Bold fill the WORD box (596.16 / 1920 = 31.05% of the
- *  stage) — measured against the rendered glyph width, not guessed. */
+ *  stage) — measured against the rendered glyph width, not guessed.
+ *
+ *  Desktop does not use this: .about-hero__wordtext is a fixed px step there
+ *  (45 -> 75 at md) so the two hero headings match in size, which means the
+ *  word shrinks relative to the stage as the viewport widens — hence the
+ *  runtime ink measurement below. mobile.css DOES use it, as
+ *  `calc(6.92 * 1.6vw)`, because a phone needs the word in proportion to the
+ *  composition more than it needs it matching a heading it cannot see. Keep
+ *  the two in step if this number ever changes. */
 const WORDTEXT_VW = 6.92;
 
 /** Peak scale a glyph reaches when the lens is centred exactly on it — "100%
@@ -292,6 +306,9 @@ export function AboutHero({ title }: { title: string }) {
   const sweepRef = useRef({ left: SWEEP_LEFT_FALLBACK, right: SWEEP_RIGHT_FALLBACK });
   const restRef = useRef(LENS_REST_X);
   const reducedRef = useRef(REDUCED_X);
+  // The lens's baseline over the word, measured off the rendered letters. Seeded
+  // with the reference-frame constant for the frames before the first measure.
+  const lensCyRef = useRef(LENS_CY);
 
   useEffect(() => {
     const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -329,9 +346,34 @@ export function AboutHero({ title }: { title: string }) {
       // the glyphs' own scale transforms do not disturb the centres they are
       // applied around.
       const toStage = (clientX: number) => ((clientX - sb.left) / sb.width) * STAGE_W;
+      // Vertical counterpart. The stage box is 500 stage px tall by its
+      // aspect-ratio, so screen y maps back through its own height.
+      const toStageY = (clientY: number) => ((clientY - sb.top) / sb.height) * STAGE_H;
 
       const boxes = glyphRefs.current.map((g) => g?.getBoundingClientRect() ?? null);
       glyphCentersRef.current = boxes.map((r) => (r ? toStage(r.left + r.width / 2) : 0));
+
+      // The lens's vertical centre, measured off the letters rather than held as
+      // a constant.
+      //
+      // LENS_CY = 169 was fitted against the reference frame, where the type
+      // scaled with the stage. It no longer does — .about-hero__wordtext is a
+      // fixed px size — so the letters' position *within* the stage drifts with
+      // the viewport and a fixed stage-px baseline slowly leaves them. Measured:
+      // the glass centre sat 15.4px above the letters' middle at 1440 and 12.0px
+      // above at 390, where the glass (40.8px) is barely wider than the ink is
+      // tall (43.1px) and the miss is obvious.
+      //
+      // Deriving it from the rendered ink centres the glass on the letters at
+      // every width, on the same measurement pass that already places the sweep.
+      // Only glyphs that actually carry ink count: the space is a zero-height box
+      // whose top/bottom would drag the midpoint toward the text baseline.
+      const inked = boxes.filter((r): r is DOMRect => !!r && r.height > 0);
+      if (inked.length) {
+        const inkTop = Math.min(...inked.map((r) => r.top));
+        const inkBottom = Math.max(...inked.map((r) => r.bottom));
+        lensCyRef.current = toStageY((inkTop + inkBottom) / 2);
+      }
 
       // Ink extent of the whole word, from the first glyph's left edge to the
       // last one's right edge.
@@ -398,7 +440,7 @@ export function AboutHero({ title }: { title: string }) {
       // The whole set, not just x: that first frame may have written a y and a
       // scale too, and a stale one of those would park the lens off its
       // baseline or at the wrong size.
-      writeLens(el, reducedRef.current, LENS_CY, LENS_SCALE);
+      writeLens(el, reducedRef.current, lensCyRef.current, LENS_SCALE);
       return;
     }
 
@@ -411,10 +453,13 @@ export function AboutHero({ title }: { title: string }) {
 
     const tick = (now: number) => {
       const t = (now - start) / 1000;
+      // Measured off the rendered letters, so read per frame alongside the
+      // sweep endpoints — fonts landing or a resize moves it.
+      const lensCy = lensCyRef.current;
       let x: number;
       // y and scale only change in the join phase; every earlier phase holds
       // the baseline, so the lens behaves exactly as it did before.
-      let y = LENS_CY;
+      let y = lensCy;
       let s = LENS_SCALE;
       let done = false;
 
@@ -450,7 +495,7 @@ export function AboutHero({ title }: { title: string }) {
         // travelling.
         const e = 1 - Math.pow(1 - p, 3);
         x = joinFrom + (LENS_PARK_X - joinFrom) * e;
-        y = LENS_CY + (LENS_PARK_Y - LENS_CY) * e;
+        y = lensCy + (LENS_PARK_Y - lensCy) * e;
         s = LENS_SCALE + (LENS_SCALE_END - LENS_SCALE) * e;
       } else {
         x = LENS_PARK_X;

@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import { useEffect, useRef } from 'react';
 import { gsap } from 'gsap';
+import { pauseContextOffscreen } from '@/lib/pauseContextOffscreen';
 
 import questionMarkSrc from '@/assets/FAQ/Asked icon-066.png';
 import dotCyanSrc from '@/assets/FAQ/Asked icon-05.png';
@@ -196,7 +197,12 @@ export function FaqAnimation() {
     }, container);
 
     window.addEventListener('resize', readStep);
+    // The dot conveyor runs on repeat:-1; stop it while the section is off
+    // screen rather than writing nine transforms a frame into an empty view.
+    const unobserve = pauseContextOffscreen(container, ctx);
+
     return () => {
+      unobserve();
       window.removeEventListener('resize', readStep);
       ctx.revert();
       // quickSetter writes bypass the context's style bookkeeping, so clear

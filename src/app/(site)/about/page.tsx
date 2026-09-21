@@ -63,6 +63,12 @@ export default async function AboutPage() {
           </nav>
 
           <p className="eyebrow sr-only">{hero.data.eyebrow}</p>
+          {/* Screen-reader-only at every width: the AboutHero stage carries the
+              heading visually on a phone too (see mobile.css, which scales the
+              stage to 1.6 viewports so the composition fits rather than hiding
+              it). This used to become the visible heading below md, back when
+              the stage was collapsed there — making it visible again would put
+              a second "About us" on screen underneath the wordmark. */}
           <h1 className="sr-only">{hero.data.title}</h1>
         </div>
 
@@ -102,8 +108,15 @@ export default async function AboutPage() {
             single percentage nor a stepped one tracks it. An earlier -11.6%
             was correct at 1440 and overlapped the word by 20px at 768.
 
-            Subtracting 28px from that band leaves exactly the Services gap. */}
-        <div className="container-x relative mt-[calc(45px+28px-0.1875*100vw)] pb-16 md:mt-[calc(75px+28px-0.1875*100vw)] md:pb-20">
+            Subtracting 28px from that band leaves exactly the Services gap.
+
+            Only the md: half is set here. Below md the stage is 1.6 viewports
+            wide and the loupe and props occupy the lower portion that is dead
+            space on desktop, so the trim stops at the composition's bottom
+            rather than the word's — a different coefficient, derived and set in
+            mobile.css next to the stage geometry it comes from. Leaving the
+            un-prefixed utility here would out-specify it. */}
+        <div className="container-x relative pb-16 md:mt-[calc(75px+28px-0.1875*100vw)] md:pb-20">
           {/* text-balance takes over line-breaking entirely, so any manual \n
               in the CMS copy is flattened to a space first — mixing the two
               would fight each other and produce uneven lines again. */}

@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { getPost, getPostSlugs } from '@/lib/data/posts';
 import { getServices } from '@/lib/data/services';
@@ -74,9 +75,16 @@ export default async function PostPage({ params }: { params: { slug: string } })
         <div className="container-x max-w-3xl">
           <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-2 text-xs text-white/40">
             {crumbs.map((c, i) => (
-              <span key={c.path} className="flex items-center gap-2">
+              // min-w-0 on both the flex item and the link: `truncate` is
+              // `overflow:hidden` + ellipsis, which can only take effect if the
+              // element is allowed to shrink below its content width. A flex
+              // child defaults to min-width:auto, so without this the long post
+              // title pushes the crumb past the viewport instead of ellipsing.
+              <span key={c.path} className="flex min-w-0 items-center gap-2">
                 {i > 0 && <span aria-hidden>/</span>}
-                <Link href={c.path} className="truncate hover:text-white">{c.name}</Link>
+                <Link href={c.path} className="min-w-0 truncate hover:text-white">
+                  {c.name}
+                </Link>
               </span>
             ))}
           </nav>
@@ -93,12 +101,21 @@ export default async function PostPage({ params }: { params: { slug: string } })
           </p>
 
           {p.coverImage ? (
-            <img
-              src={p.coverImage.url}
-              alt={p.coverImage.alt}
-              decoding="async"
-              className="mt-10 w-full rounded-2xl object-cover"
-            />
+            // The intrinsic size is unknown here (CMS upload), so the box is
+            // reserved with an aspect ratio: without it the article text
+            // reflows when the file lands, which on a phone happens right
+            // under the reader's eyes. next/image then serves it at the
+            // rendered width instead of full resolution.
+            <span className="relative mt-10 block aspect-[16/9] w-full overflow-hidden rounded-2xl">
+              <Image
+                src={p.coverImage.url}
+                alt={p.coverImage.alt}
+                fill
+                sizes="(max-width: 767px) 100vw, 768px"
+                priority
+                className="object-cover"
+              />
+            </span>
           ) : null}
 
           <RichText doc={p.body} className="mt-12" />

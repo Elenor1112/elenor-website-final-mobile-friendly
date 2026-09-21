@@ -300,7 +300,16 @@ body:has(#elenor-intro) #site-nav {
 
 .about-hero__stage {
   position: relative;
-  width: 100%;
+  /* The var() FALLBACK carries the desktop value; --about-stage-w is
+     deliberately not declared here. That is not a style choice — PostCSS hoists
+     `@import './mobile.css'` to the top of the built sheet (an @import must
+     precede other rules), so mobile.css's declarations land BEFORE this rule in
+     the cascade, not after as the import's comment claims. A
+     `--about-stage-w: 100%` here would therefore beat the mobile layer's own
+     value at equal specificity. Reading it as a fallback means there is nothing
+     on this element to lose to, exactly as --about-wordtext-size below does.
+     See mobile.css's about-hero block for why a phone needs a wider stage. */
+  width: var(--about-stage-w, 100%);
   aspect-ratio: 1920 / 500;
   /* The stage is full-bleed (outside .container-x) so the lens can sweep
      edge-to-edge, but the wordmark itself needs to line up with the "Our
@@ -336,8 +345,15 @@ body:has(#elenor-intro) #site-nav {
    art — see AboutHero.tsx. It fills the same WORD box the old PNG occupied
    (percent-of-stage left/top/width, set inline), so the lens-sweep and
    glass-mask math elsewhere on this page, all measured against that box,
-   still lines up. Font-size is a percentage of the stage width via cqw so it
-   scales with the box exactly like the old image's own width did. */
+   still lines up.
+
+   Font-size is a fixed px step (45 -> 75 at md), NOT a fraction of the stage —
+   see the note on matching the services h1 below. The consequence is that the
+   word occupies fewer and fewer stage px as the viewport widens, which is why
+   the sweep endpoints are measured off the rendered ink at runtime rather than
+   held as constants. Below md the mobile layer overrides the size via
+   --about-wordtext-size to restore the proportional fit; the fallbacks here are
+   the desktop values, and nothing outside that media query sets the property. */
 .about-hero__wordtext {
   display: block;
   white-space: nowrap;
@@ -362,13 +378,17 @@ body:has(#elenor-intro) #site-nav {
   letter-spacing: -0.025em;
   /* 25% larger than the services h1 it was matched to (2.25rem -> 2.8125rem,
      3.75rem -> 4.6875rem). The lens sweep and park read the rendered ink at
-     runtime, so they follow the larger word without further adjustment. */
-  font-size: 2.8125rem;
+     runtime, so they follow the larger word without further adjustment.
+
+     The var() fallback IS the desktop value: --about-wordtext-size is set only
+     inside mobile.css's max-width query, so at >=768px this resolves to the
+     literal below and desktop rendering is unchanged. */
+  font-size: var(--about-wordtext-size, 2.8125rem);
 }
 
 @media (min-width: 768px) {
   .about-hero__wordtext {
-    font-size: 4.6875rem;
+    font-size: var(--about-wordtext-size, 4.6875rem);
   }
 }
 
@@ -583,3 +603,16 @@ body:has(#elenor-intro) #site-nav {
   opacity: 0.9;
 }
 
+
+/* ── Mobile layer ──────────────────────────────────────────────────────────
+   Every rule in mobile.css is wrapped in `@media (max-width: 767.98px)`, so
+   nothing it contains can reach a desktop viewport.
+
+   CAREFUL: this line's position is NOT its position in the cascade. A CSS
+   @import must precede all other rules, so PostCSS hoists the inlined file to
+   the TOP of the built sheet — mobile.css's rules come out before everything
+   above, not after. So the mobile tier does NOT win on source order at equal
+   specificity; it loses. Rules here that a phone needs to override must either
+   out-specify it or, for a custom property, be read as a var() fallback rather
+   than declared on the same element (see .about-hero__stage). */
+@import './mobile.css';

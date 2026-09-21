@@ -119,6 +119,17 @@ export function ServicesShowcase({
   // another service, and mouseleave falls back to the locked one — not to all.
   const [locked, setLocked] = useState<string | null>(null);
   const [hovered, setHovered] = useState<string | null>(null);
+  // Phone-only: the service rail scrolls horizontally, and arrows make that
+  // discoverable. The buttons are rendered `md:hidden` (static markup, no
+  // effects) and the rail is the same element on both, so desktop is unaffected.
+  const railRef = useRef<HTMLUListElement | null>(null);
+  const scrollRail = (dir: -1 | 1) => {
+    const rail = railRef.current;
+    if (!rail) return;
+    // About one chip-and-a-half per press, so a tap always reveals something new
+    // without skipping past an entry.
+    rail.scrollBy({ left: dir * Math.round(rail.clientWidth * 0.6), behavior: 'smooth' });
+  };
   const reduce = useReducedMotion();
 
   const active = hovered ?? locked;
@@ -163,8 +174,37 @@ export function ServicesShowcase({
         <div className="mt-14 flex flex-col gap-12 lg:flex-row lg:gap-10">
           {/* LEFT — service list. Sticky on desktop; horizontal scroll on mobile. */}
           <div className="lg:w-[30%]">
-            <div className="lg:sticky lg:top-28">
+            <div className="relative lg:sticky lg:top-28">
+              {/* Phone-only rail arrows, placed in their own row above the
+                  chips. Floating them over the rail's ends covered the first
+                  and last label — the exact items they exist to reach — and a
+                  390px screen has no gutter to move them into. `md:hidden` is
+                  safe here: these are static buttons with no effects, so
+                  nothing mounts or runs on desktop. */}
+              <div className="mb-3 flex items-center justify-end gap-2 md:hidden">
+                <button
+                  type="button"
+                  aria-label="Previous services"
+                  onClick={() => scrollRail(-1)}
+                  className="grid h-9 w-9 place-items-center rounded-full border border-white/12 bg-white/[0.04] text-white/75"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden>
+                    <path d="M15 5l-7 7 7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </button>
+                <button
+                  type="button"
+                  aria-label="More services"
+                  onClick={() => scrollRail(1)}
+                  className="grid h-9 w-9 place-items-center rounded-full border border-white/12 bg-white/[0.04] text-white/75"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden>
+                    <path d="M9 5l7 7-7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </button>
+              </div>
               <ul
+                ref={railRef}
                 className="-mx-6 flex snap-x gap-3 overflow-x-auto px-6 pb-2 lg:mx-0 lg:flex-col lg:gap-1 lg:overflow-visible lg:px-0"
                 role="tablist"
                 aria-label="Filter work by service"
@@ -222,9 +262,16 @@ export function ServicesShowcase({
               </ul>
 
               <p className="mt-6 hidden text-xs text-white/35 lg:block">
-                {locked
-                  ? 'Click the selected service again to show all work.'
-                  : 'Hover to preview a service — click to keep it selected.'}
+                <span className="max-md:hidden">
+                  {locked
+                    ? 'Click the selected service again to show all work.'
+                    : 'Hover to preview a service — click to keep it selected.'}
+                </span>
+                <span className="hidden max-md:inline">
+                  {locked
+                    ? 'Tap the selected service again to show all work.'
+                    : 'Tap a service to filter the work.'}
+                </span>
               </p>
             </div>
           </div>
@@ -319,7 +366,13 @@ function MarqueeColumn({
   return (
     // The belt is taller than its window; the window clips it. `h-[42rem]` on
     // mobile / `h-[46rem]` on desktop keeps roughly two cards visible at once.
-    <div className="group relative h-[42rem] overflow-hidden lg:h-[46rem]">
+    // Below md the two belts stack into one column, so their heights add up —
+    // 42rem each put the section past 1700px on a phone. The window there is
+    // one whole card (~27.4rem) plus a sliver of the next, so the belt still
+    // reads as a moving strip rather than a static tile. It must not be an
+    // arbitrary height: at 23rem the window was shorter than a card and every
+    // card was sliced through its own copy.
+    <div className="group relative h-[42rem] overflow-hidden max-md:h-[31rem] lg:h-[46rem]">
       <div
         // `showcase-belt` lets globals.css pause this track (and only this one)
         // while the pointer is over one of its cards.
