@@ -183,3 +183,13 @@
 
 /* Responsive scaling is handled by the clamp() radius/size vars above, so the
    orbit shrinks gracefully with the viewport without hard breakpoint jumps. */
+
+/* Short laptop windows (1280–1366 wide, ~600–768 tall): cap the ring by height
+   too, so the vertical spread fits the 80vh block instead of rising into the
+   showcase strip above it. On tall windows the vw term still wins. */
+@media (min-width: 1200px) and (max-width: 1439.98px) {
+  .brand-orbit {
+    --orbit-radius: clamp(140px, min(22vw, 34vh), 320px);
+    --orbiter-size: clamp(50px, min(6.5vw, 11vh), 110px);
+  }
+}

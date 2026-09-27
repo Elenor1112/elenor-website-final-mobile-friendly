@@ -210,6 +210,15 @@ const LENS_SCALE_END = LENS_SCALE * (95 / 164.85);
 const LENS_PARK_X = 1444;
 const LENS_PARK_Y = 220;
 
+/** Right edge of the cluster's ink once the lens has parked (its ring ink is
+ *  95 stage px wide) — the cluster's right-most visible pixel. */
+const CLUSTER_INK_RIGHT = LENS_PARK_X + 95 / 2;
+
+/** Laptop widths where the cluster's stage-% slot lands on top of the lede
+ *  paragraph. Here the props and parked lens shift right so the cluster's
+ *  right edge meets the container's right content edge instead. */
+const PROPS_SHIFT_QUERY = '(min-width: 1200px) and (max-width: 1439.98px)';
+
 /** ~660 stage px/s over the 797px flight — the speed of the sweep's mid-stroke,
  *  so the departure reads as continuous with the motion before it. */
 const LENS_JOIN_DUR = 1.2;
@@ -309,6 +318,10 @@ export function AboutHero({ title }: { title: string }) {
   // The lens's baseline over the word, measured off the rendered letters. Seeded
   // with the reference-frame constant for the frames before the first measure.
   const lensCyRef = useRef(LENS_CY);
+  // Rightward shift of the props and the lens park, in stage px (0 outside
+  // PROPS_SHIFT_QUERY), and whether the lens has reached its park.
+  const propsDxRef = useRef(0);
+  const parkedRef = useRef(false);
 
   useEffect(() => {
     const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -399,6 +412,18 @@ export function AboutHero({ title }: { title: string }) {
       // Reduced motion parks mid-word rather than on the tail, so the lens
       // reads as caught mid-sweep instead of finished.
       reducedRef.current = (inkL + inkR) / 2;
+
+      // Props shift: align the cluster's right ink edge with .container-x's
+      // right content edge (same formula as --about-container-x at md+).
+      const vw = document.documentElement.clientWidth;
+      const cx = Math.max(0, (vw - 1216) / 2) + 40;
+      const dx = window.matchMedia(PROPS_SHIFT_QUERY).matches
+        ? Math.max(0, toStage(vw - cx) - CLUSTER_INK_RIGHT)
+        : 0;
+      propsDxRef.current = dx;
+      stage.style.setProperty('--props-dx', pctW(dx));
+      // The rAF loop has ended once parked, so keep the lens with the props.
+      if (parkedRef.current) writeLens(stage, LENS_PARK_X + dx, LENS_PARK_Y, LENS_SCALE_END);
     };
 
     // Web fonts land after first paint and change every number above, so
@@ -494,14 +519,15 @@ export function AboutHero({ title }: { title: string }) {
         // different easings makes an object look puppeteered rather than
         // travelling.
         const e = 1 - Math.pow(1 - p, 3);
-        x = joinFrom + (LENS_PARK_X - joinFrom) * e;
+        x = joinFrom + (LENS_PARK_X + propsDxRef.current - joinFrom) * e;
         y = lensCy + (LENS_PARK_Y - lensCy) * e;
         s = LENS_SCALE + (LENS_SCALE_END - LENS_SCALE) * e;
       } else {
-        x = LENS_PARK_X;
+        x = LENS_PARK_X + propsDxRef.current;
         y = LENS_PARK_Y;
         s = LENS_SCALE_END;
         done = true;
+        parkedRef.current = true;
       }
 
       const glassR = writeLens(el, x, y, s);
@@ -575,6 +601,7 @@ export function AboutHero({ title }: { title: string }) {
           ['--loupe-w' as string]: String(LOUPE_W),
           ['--lens-y' as string]: String(LENS_CY),
           ['--lens-x' as string]: reduced ? REDUCED_X : SWEEP_LEFT_FALLBACK,
+          ['--props-dx' as string]: '0%',
         }}
       >
         {/* The base cut. A circular hole tracks the glass so this copy is never
@@ -604,7 +631,7 @@ export function AboutHero({ title }: { title: string }) {
             height={p.h}
             className="about-hero__prop"
             style={{
-              left: pctW(p.x),
+              left: `calc(${pctW(p.x)} + var(--props-dx, 0%))`,
               top: pctH(p.y),
               width: pctW(p.w),
               ['--ar' as string]: `${p.w} / ${p.h}`,
