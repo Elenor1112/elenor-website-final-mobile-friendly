@@ -13,6 +13,7 @@ import { DraftBanner } from '@/components/DraftBanner';
 import { ChatWidgetLoader } from '@/components/chat/ChatWidgetLoader';
 import { MobilePageTransition } from '@/components/MobilePageTransition';
 import { MobileChrome } from '@/components/MobileChrome';
+import { BackToTop } from '@/components/BackToTop';
 
 export async function generateMetadata(): Promise<Metadata> {
   const site = await getSiteSettings();
@@ -81,6 +82,7 @@ export default async function SiteLayout({ children }: { children: React.ReactNo
       </main>
       <Footer />
       <DraftBanner />
+      <BackToTop />
       <ChatWidgetLoader />
     </>
   );

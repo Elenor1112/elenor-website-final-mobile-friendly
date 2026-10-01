@@ -279,11 +279,12 @@ export function ServicesShowcase({
           {/* RIGHT — two counter-drifting marquee columns. Column A travels up,
               column B travels down, both on the same slow loop so the pair reads
               as one mechanism. Masked top and bottom so cards dissolve at the
-              edges instead of popping. Single column on mobile (drifting up). */}
+              edges instead of popping. Two columns on mobile too, with smaller
+              cards (sized in mobile.css). */}
           <div ref={gridRef} className="lg:w-[70%]">
             <div
               className={[
-                'grid grid-cols-1 gap-5 sm:grid-cols-2',
+                'grid grid-cols-2 gap-5 max-md:gap-3',
                 'transition-opacity duration-700',
                 inView ? 'opacity-100' : 'opacity-0',
               ].join(' ')}
@@ -366,17 +367,13 @@ function MarqueeColumn({
   return (
     // The belt is taller than its window; the window clips it. `h-[42rem]` on
     // mobile / `h-[46rem]` on desktop keeps roughly two cards visible at once.
-    // Below md the two belts stack into one column, so their heights add up —
-    // 42rem each put the section past 1700px on a phone. The window there is
-    // one whole card (~27.4rem) plus a sliver of the next, so the belt still
-    // reads as a moving strip rather than a static tile. It must not be an
-    // arbitrary height: at 23rem the window was shorter than a card and every
-    // card was sliced through its own copy.
-    <div className="group relative h-[42rem] overflow-hidden max-md:h-[31rem] lg:h-[46rem]">
+    // Below md the belts sit side by side with compact cards (see mobile.css),
+    // so a 28rem window shows about two of them per column.
+    <div className="group relative h-[42rem] overflow-hidden max-md:h-[28rem] lg:h-[46rem]">
       <div
         // `showcase-belt` lets globals.css pause this track (and only this one)
         // while the pointer is over one of its cards.
-        className="showcase-belt flex flex-col gap-5"
+        className="showcase-belt flex flex-col gap-5 max-md:gap-3"
         style={
           reduce
             ? undefined
@@ -430,7 +427,7 @@ function ShowcaseCardTile({
         tabIndex={duplicate ? -1 : undefined}
         // `showcase-card` is the pause trigger — the hover region is this
         // element's rounded box, so the belt only stops within the card radius.
-        className="showcase-card group/card block overflow-hidden rounded-3xl glass transition-transform duration-500 hover:-translate-y-1"
+        className="showcase-card showcase-tile group/card block overflow-hidden rounded-3xl glass transition-transform duration-500 hover:-translate-y-1"
       >
         {/* Cover with a diagonal cutout corner (top-right) */}
         <div

@@ -31,7 +31,7 @@ export const siteSettingsSchema = z.object({
     .object({
       days: z.array(z.string()).default(['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday']),
       opens: z.string().default('10:00'),
-      closes: z.string().default('18:00'),
+      closes: z.string().default('6:00'),
     })
     .prefault({}),
   founder: z

@@ -402,6 +402,46 @@
     align-items: center;
   }
 
+  /* The work belts sit side by side here, as on desktop, so each card is
+     ~165px wide. Everything inside steps down to fit that width. Selectors are
+     anchored on `main .showcase-tile` so they outweigh the generic `main
+     .text-*` rules above. */
+  main .showcase-tile {
+    border-radius: 1rem;
+  }
+  /* The cutout corner is an inline clip-path, hence !important. */
+  main .showcase-tile > div:first-child {
+    clip-path: polygon(0 0, calc(100% - 1.25rem) 0, 100% 1.25rem, 100% 100%, 0 100%) !important;
+  }
+  main .showcase-tile span.text-lg {
+    left: 0.75rem;
+    bottom: 0.5rem;
+    font-size: 0.875rem;
+    line-height: 1.2;
+  }
+  main .showcase-tile .p-5 {
+    padding: 0.75rem;
+  }
+  main .showcase-tile h3 {
+    font-size: 0.8125rem;
+    line-height: 1.35;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    overflow: hidden;
+  }
+  main .showcase-tile .mt-4 {
+    margin-top: 0.5rem;
+  }
+  main .showcase-tile .rounded-full {
+    font-size: 0.625rem;
+    padding: 0.125rem 0.5rem;
+  }
+  /* One pill only, so the row never wraps at this width. */
+  main .showcase-tile .mt-4 > span:nth-child(n + 2) {
+    display: none;
+  }
+
   /* ── Touch ergonomics ────────────────────────────────────────────────────
      A 44px floor on interactive elements, at specificity 0 via :where() so any
      component class still wins — this raises the elements nobody styled, and
@@ -492,6 +532,18 @@
       transform var(--m-dur) var(--m-ease);
     /* Clear the iOS home indicator when installed to the home screen. */
     bottom: max(1.25rem, env(safe-area-inset-bottom));
+  }
+
+  /* Back-to-top sits above the launcher, so it clears the same home indicator
+     plus the launcher's 56px, and recedes with it while scrolling. Doubled
+     attribute for the same specificity reason as the launcher. */
+  [data-back-to-top][data-back-to-top] {
+    bottom: calc(max(1.25rem, env(safe-area-inset-bottom)) + 4.25rem);
+    right: 1.5rem;
+  }
+  html[data-scrolling] [data-back-to-top][data-visible][data-visible] {
+    opacity: 0.3;
+    transform: scale(0.8);
   }
 
   /* ── App feel ────────────────────────────────────────────────────────────
