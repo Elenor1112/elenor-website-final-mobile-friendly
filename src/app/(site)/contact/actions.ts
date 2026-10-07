@@ -3,6 +3,7 @@
 import { db } from '@/db';
 import { contactMessages } from '@/db/schema';
 import { getServices } from '@/lib/data/services';
+import { notifyNewLead } from '@/server/mail/notify';
 
 export type LeadState = { ok: boolean; message: string } | null;
 
@@ -54,6 +55,8 @@ export async function submitLead(
       message: 'Something went wrong on our side — please try again, or email us directly.',
     };
   }
+
+  await notifyNewLead({ name, email, company, phone, role, service, budget, message });
 
   return {
     ok: true,

@@ -119,6 +119,7 @@ export const workSettingsSchema = z.object({
       'Media Production',
       'Law Firms',
       'Institutions',
+      'Facility Management',
       'Home Appliances',
       'Hospitality',
       'Industrial',

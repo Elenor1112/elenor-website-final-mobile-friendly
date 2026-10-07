@@ -16,45 +16,92 @@ export type WorkCard = {
   result: string;
 };
 export type RosterItem = { name: string; industries: string[] };
+export type ServiceOption = { slug: string; name: string };
 
 const tints = ['from-brand/25', 'from-brand-cyan/20', 'from-brand-amber/20'];
 
-// Filterable case-study gallery. Filter is a real DOM control (works without the
-// 3D layer); each card is a real anchor to its case study page.
+const pillClass = (active: boolean) =>
+  `rounded-full px-4 py-2 text-sm transition-colors ${
+    active ? 'bg-white text-ink' : 'border border-white/15 text-white/65 hover:border-white/40'
+  }`;
+
+// Filterable case-study gallery. Filters are real DOM controls (work without the
+// 3D layer); each card is a real anchor to its case study page. Industry and
+// service filters combine; the service filter is mirrored in `?service=` so
+// service pages can deep-link to their related work.
 export function WorkGallery({
   caseStudies,
   clientRoster,
   industries,
+  services,
+  initialService,
 }: {
   caseStudies: WorkCard[];
   clientRoster: RosterItem[];
   industries: string[];
+  services: ServiceOption[];
+  /** Service slug to pre-select, from the page's `?service=` param. */
+  initialService: string | null;
 }) {
   const [filter, setFilter] = useState<string>('All');
-  const shown =
-    filter === 'All' ? caseStudies : caseStudies.filter((c) => c.industries.includes(filter));
+  const [service, setService] = useState<string>(initialService ?? 'All');
+  const serviceName = services.find((s) => s.slug === service)?.name ?? null;
+
+  const shown = caseStudies.filter(
+    (c) =>
+      (filter === 'All' || c.industries.includes(filter)) &&
+      (serviceName === null || c.services.includes(serviceName)),
+  );
+  // Roster clients carry no service data, so they only show without a service filter.
   const rosterShown =
-    filter === 'All'
-      ? clientRoster
-      : clientRoster.filter((c) => c.industries.includes(filter));
+    serviceName !== null
+      ? []
+      : filter === 'All'
+        ? clientRoster
+        : clientRoster.filter((c) => c.industries.includes(filter));
+
+  const selectService = (slug: string) => {
+    setService(slug);
+    const url = new URL(window.location.href);
+    if (slug === 'All') url.searchParams.delete('service');
+    else url.searchParams.set('service', slug);
+    window.history.replaceState(window.history.state, '', url);
+  };
 
   return (
     <div>
-      <div className="flex flex-wrap gap-2">
-        {industries.map((ind) => (
-          <button
-            key={ind}
-            onClick={() => setFilter(ind)}
-            className={`rounded-full px-4 py-2 text-sm transition-colors ${
-              filter === ind
-                ? 'bg-white text-ink'
-                : 'border border-white/15 text-white/65 hover:border-white/40'
-            }`}
-          >
-            {ind}
-          </button>
-        ))}
+      <div className="space-y-4">
+        <div>
+          <p className="mb-3 text-xs uppercase tracking-[0.18em] text-white/40">Industry</p>
+          <div className="flex flex-wrap gap-2">
+            {industries.map((ind) => (
+              <button key={ind} onClick={() => setFilter(ind)} className={pillClass(filter === ind)}>
+                {ind}
+              </button>
+            ))}
+          </div>
+        </div>
+        {services.length > 0 && (
+          <div>
+            <p className="mb-3 text-xs uppercase tracking-[0.18em] text-white/40">Service</p>
+            <div className="flex flex-wrap gap-2">
+              {[{ slug: 'All', name: 'All' }, ...services].map((s) => (
+                <button
+                  key={s.slug}
+                  onClick={() => selectService(s.slug)}
+                  className={pillClass(service === s.slug)}
+                >
+                  {s.name}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
+
+      {shown.length === 0 && (
+        <p className="mt-10 text-sm text-white/50">No projects match these filters yet.</p>
+      )}
 
       <div className="mt-10 grid gap-6 md:grid-cols-2">
         {shown.map((c, i) => (
@@ -108,7 +155,11 @@ export function WorkGallery({
               {c.services.map((s) => (
                 <span
                   key={s}
-                  className="rounded-full border border-white/10 px-3 py-1 text-xs text-white/55"
+                  className={`rounded-full border px-3 py-1 text-xs ${
+                    s === serviceName
+                      ? 'border-brand-cyan/50 text-brand-cyan'
+                      : 'border-white/10 text-white/55'
+                  }`}
                 >
                   {s}
                 </span>

@@ -470,18 +470,23 @@ async function seedFaqs() {
 }
 
 async function seedTestimonials() {
-  const count = await db.select({ n: sql<number>`count(*)` }).from(schema.testimonials);
-  if (Number(count[0].n) > 0) return;
+  // Top-up: only insert seed testimonials whose company isn't already present,
+  // so re-running never duplicates or overwrites admin edits.
+  const key = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
+  const existing = await db.select({ company: schema.testimonials.company }).from(schema.testimonials);
+  const have = new Set(existing.map((r) => key(r.company)));
+  const missing = testimonialData.filter((t) => !have.has(key(t.company)));
+  if (missing.length === 0) return;
   await db.insert(schema.testimonials).values(
-    testimonialData.map((t, i) => ({
+    missing.map((t, i) => ({
       quote: t.quote,
       author: t.author,
       role: t.role,
       company: t.company,
-      sortOrder: i,
+      sortOrder: existing.length + i,
     })),
   );
-  console.log(`✓ Testimonials: ${testimonialData.length} seeded`);
+  console.log(`✓ Testimonials: ${missing.length} seeded`);
 }
 
 async function seedMenus() {

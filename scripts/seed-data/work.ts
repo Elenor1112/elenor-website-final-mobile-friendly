@@ -44,6 +44,7 @@ export const industries = [
   'Media Production',
   'Law Firms',
   'Institutions',
+  'Facility Management',
   'Home Appliances',
   'Hospitality',
   'Industrial',
@@ -141,7 +142,7 @@ export const caseStudies: CaseStudy[] = [
   {
     slug: 'marcyrl-printing',
     client: 'Marcyrl Pharmaceutical',
-    industry: 'Healthcare',
+    industry: 'Pharmaceuticals',
     services: ['Printing & Production'],
     categories: ['Printing & Production'],
     result: 'Precise, on-brand printing and production for a pharmaceutical leader.',
@@ -342,7 +343,7 @@ export const caseStudies: CaseStudy[] = [
   {
     slug: 'cbre-interior',
     client: 'CBRE',
-    industry: 'Institutions',
+    industry: 'Facility Management',
     services: ['Interior Design'],
     categories: ['Interior Design'],
     result: 'A refined interior fit-out for a global commercial real-estate leader.',

@@ -188,7 +188,7 @@ function SiteTab({ initial }: { initial: SiteSettings }) {
 
       <Card>
         <h2 className="mb-1 font-display font-semibold">Featured clients</h2>
-        <p className="mb-4 text-xs text-white/40">Names shown in the home “Trusted by” reel and llms.txt.</p>
+        <p className="mb-4 text-xs text-white/40">Names used in llms.txt and AI indexing. The home “Trusted by” reel shows one logo per testimonial (Testimonials page).</p>
         <StringListEditor value={v.featuredClients} onChange={(featuredClients) => setV({ ...v, featuredClients })} placeholder="Coca-Cola" />
       </Card>
 
@@ -259,7 +259,7 @@ function ContactTab({ initial }: { initial: ContactSettings }) {
     <div className="space-y-6">
       <Card>
         <h2 className="mb-1 font-display font-semibold">Budget options</h2>
-        <p className="mb-4 text-xs text-white/40">Choices in the contact form’s budget dropdown.</p>
+        <p className="mb-4 text-xs text-white/40">Choices in the contact form’s monthly budget dropdown.</p>
         <StringListEditor value={v.budgets} onChange={(budgets) => setV({ ...v, budgets })} placeholder="EGP 25k–75k" />
       </Card>
       <Card className="space-y-4">

@@ -8,7 +8,6 @@ import { Clients } from '@/components/sections/Clients';
 import { BlogPreview } from '@/components/sections/BlogPreview';
 import { CTA } from '@/components/sections/CTA';
 import { getPage, getSection } from '@/lib/data/pages';
-import { getSiteSettings } from '@/lib/data/settings';
 import { getServices } from '@/lib/data/services';
 import { getCaseStudies } from '@/lib/data/work';
 import { getPosts } from '@/lib/data/posts';
@@ -30,9 +29,8 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function HomePage() {
-  const [page, site, services, caseStudies, posts, testimonials] = await Promise.all([
+  const [page, services, caseStudies, posts, testimonials] = await Promise.all([
     getPage('home'),
-    getSiteSettings(),
     getServices(),
     getCaseStudies(),
     getPosts(),
@@ -84,7 +82,6 @@ export default async function HomePage() {
             key={section.id}
             data={parseSectionData('clients', section.data)}
             testimonials={testimonials}
-            reelItems={site.featuredClients}
           />
         );
       case 'blog_preview':

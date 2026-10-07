@@ -98,6 +98,7 @@
   font-weight: 700;
   font-size: clamp(0.75rem, 2vw, 1.25rem);
   color: #fff;
+  text-decoration: none;
   /* Inline `backgroundColor` (brand.color, set per-brand in the component)
      overrides this via higher specificity. */
   background: #26ccc2;

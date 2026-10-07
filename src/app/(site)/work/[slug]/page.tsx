@@ -75,18 +75,15 @@ export default async function CaseStudyPage({ params }: { params: { slug: string
                 {c.client}
               </h1>
               <p className="mt-7 max-w-2xl text-lg leading-relaxed text-white/70">{c.result}</p>
-              <div className="mt-7 flex flex-wrap gap-2">
-                {c.services.map((s) => (
-                  <span key={s} className="rounded-full border border-white/15 px-3 py-1 text-xs text-white/60">
-                    {s}
-                  </span>
-                ))}
-                {c.technologies.map((t) => (
-                  <span key={t} className="rounded-full border border-brand-cyan/30 px-3 py-1 text-xs text-brand-cyan">
-                    {t}
-                  </span>
-                ))}
-              </div>
+              {c.technologies.length > 0 && (
+                <div className="mt-7 flex flex-wrap gap-2">
+                  {c.technologies.map((t) => (
+                    <span key={t} className="rounded-full border border-brand-cyan/30 px-3 py-1 text-xs text-brand-cyan">
+                      {t}
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
 
             <CaseStudyHeroModel client={c.client} />

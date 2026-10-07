@@ -4,6 +4,7 @@ import { WorkGallery } from '@/components/WorkGallery';
 import { CTA } from '@/components/sections/CTA';
 import { getCaseStudies, getRosterClients } from '@/lib/data/work';
 import { getClientLogo } from '@/lib/data/client-logos';
+import { getServices } from '@/lib/data/services';
 import { getWorkSettings } from '@/lib/data/settings';
 import { hubPageMetadata } from '@/lib/data/seo';
 
@@ -16,12 +17,27 @@ export function generateMetadata(): Promise<Metadata> {
   });
 }
 
-export default async function WorkPage() {
-  const [caseStudies, roster, workSettings] = await Promise.all([
+export default async function WorkPage({
+  searchParams,
+}: {
+  searchParams: { service?: string };
+}) {
+  const [caseStudies, roster, workSettings, allServices] = await Promise.all([
     getCaseStudies(),
     getRosterClients(),
     getWorkSettings(),
+    getServices(),
   ]);
+
+  // Only offer service filters that at least one case study is tagged with.
+  // Case studies store service *names*; the URL (?service=) carries the slug.
+  const tagged = new Set(caseStudies.flatMap((c) => c.services));
+  const serviceOptions = allServices
+    .filter((s) => tagged.has(s.name))
+    .map((s) => ({ slug: s.slug, name: s.name }));
+  const initialService = serviceOptions.some((s) => s.slug === searchParams.service)
+    ? searchParams.service!
+    : null;
 
   return (
     <>
@@ -40,6 +56,8 @@ export default async function WorkPage() {
             }))}
             clientRoster={roster}
             industries={workSettings.industries}
+            services={serviceOptions}
+            initialService={initialService}
           />
         </div>
       </section>

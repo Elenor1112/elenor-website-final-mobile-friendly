@@ -98,7 +98,7 @@ render on demand.
 - [ ] Replace the seeded placeholder blog bodies (all six posts) in the admin.
 - [ ] Replace placeholder testimonial copy with approved client quotes.
 - [ ] Add real `/public/og-image.jpg` + `/public/logo.png` (referenced by metadata & schema) and a favicon set.
-- [ ] Optional: wire Resend notifications for new contact messages (leads already persist to the inbox).
+- [ ] Set `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS` to enable email notifications for new contact messages (sent to requests@elenor-marketing.com via the mailbox's SMTP server; leads already persist to the inbox regardless).
 - [ ] Note: Vercel Hobby is licensed for non-commercial use — plan for Pro if Vercel flags the project.
 
 # elenor-website-final-mobile-friendly

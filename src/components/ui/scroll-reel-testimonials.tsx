@@ -4,11 +4,12 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useReducedMotion } from 'framer-motion';
 import { getClientLogo } from '@/lib/data/client-logos';
 
-// Testimonials with a counter-rotating "reel" of client tiles beside the
-// featured quote. Quotes auto-cycle every 4s; hovering pauses, leaving resumes
-// after 1s. Arrow buttons / arrow keys page manually. Keyframes live in
-// globals.css (scroll-reel-*), so the global prefers-reduced-motion rule
-// flattens the reel and character animations for free.
+// Testimonials with a two-column "reel" of client logos beside the featured
+// quote. The reel is driven by the same cursor as the quote: the active
+// client's logo is centred and enlarged while the columns slide in opposite
+// directions. Quotes auto-cycle every 4s; hovering pauses, leaving resumes
+// after 1s. Arrow buttons / arrow keys page manually. Char-rise/exit
+// keyframes live in globals.css (scroll-reel-*).
 
 export type Testimonial = {
   quote: string;
@@ -24,13 +25,6 @@ const QUOTE_CLASSES =
 const AUTHOR_CLASSES = 'text-sm text-white/55';
 const FEATURED_SHADOW =
   'shadow-[0_0_45px_-10px_theme(colors.brand.glow)] ring-1 ring-brand-glow/40';
-
-const TILE_GRADIENTS = [
-  'from-brand via-brand-glow to-brand-cyan',
-  'from-brand-cyan via-brand-glow to-brand',
-  'from-brand-amber via-brand to-brand-glow',
-  'from-brand-glow via-brand-cyan to-brand',
-];
 
 const AUTO_ADVANCE_MS = 4000;
 const RESUME_DELAY_MS = 1000;
@@ -72,54 +66,64 @@ function RisingChars({ text, animate }: { text: string; animate: boolean }) {
   );
 }
 
-// One vertically looping column of client tiles. Content is doubled and the
-// track translates by -50% for a seamless loop; `direction` flips the
-// keyframes so adjacent columns counter-rotate. Longhand animation properties
-// (not the shorthand) so the group-hover play-state class can pause it.
+// Tile height (h-24 = 96px) + pb-3 (12px). The track offset is computed from
+// this, so it must match the tile markup below.
+const TILE_PITCH = 108;
+const EASE = 'ease-[cubic-bezier(0.16,1,0.3,1)]';
+
+// One vertical column of client tiles, driven by the active step instead of a
+// free-running animation. `center` is the (fractional) tile index, within the
+// base copy, that sits at the panel's vertical centre; the track is repeated
+// so the list can loop, and each tile scales by its distance from the centre —
+// only a tile exactly on the centre is "active" (enlarged + glow). Because the
+// two columns are half a tile apart, the other column's tiles stay small.
 function ReelColumn({
   items,
-  direction,
-  highlight,
+  center,
+  instant,
 }: {
   items: string[];
-  direction: 'up' | 'down';
-  highlight: string;
+  center: number;
+  instant: boolean;
 }) {
-  const doubled = [...items, ...items];
+  const m = items.length;
+  const pad = Math.ceil(4 / m);
+  const base = pad * m;
+  const copies = 2 * pad + 2;
+  const centerIdx = base + center;
   return (
-    <div className="relative h-full flex-1 overflow-hidden">
+    <div className="relative h-full flex-1">
       <div
-        className="flex flex-col group-hover:[animation-play-state:paused]"
-        style={{
-          animationName: `scroll-reel-${direction}`,
-          animationDuration: `${items.length * 7}s`,
-          animationTimingFunction: 'linear',
-          animationIterationCount: 'infinite',
-        }}
+        className={[
+          'absolute inset-x-0 top-1/2 flex flex-col transition-transform duration-700 motion-reduce:transition-none',
+          EASE,
+          instant ? '!transition-none' : '',
+        ].join(' ')}
+        style={{ transform: `translateY(${-(centerIdx + 0.5) * TILE_PITCH}px)` }}
       >
-        {doubled.map((name, i) => {
+        {Array.from({ length: copies * m }, (_, p) => {
+          const name = items[p % m];
           const logo = getClientLogo(name);
+          const active = Math.abs(p - centerIdx) < 0.01;
+          const isBase = p >= base && p < base + m;
           return (
-            <div key={i} className="pb-3">
+            <div key={p} className="pb-3" aria-hidden={isBase ? undefined : true}>
               <div
                 className={[
-                  'relative flex h-24 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br px-3 transition-shadow duration-500',
-                  TILE_GRADIENTS[i % TILE_GRADIENTS.length],
-                  name === highlight ? FEATURED_SHADOW : '',
+                  'relative flex h-24 items-center justify-center rounded-2xl px-3 transition-[transform,opacity,box-shadow] duration-700 motion-reduce:transition-none',
+                  EASE,
+                  instant ? '!transition-none' : '',
+                  active ? `scale-125 opacity-100 ${FEATURED_SHADOW}` : 'scale-[0.85] opacity-50',
                 ].join(' ')}
               >
-                <div className="absolute inset-0 bg-ink/60" />
                 {logo ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={logo.url}
-                    alt={name}
+                    alt={isBase ? name : ''}
                     loading="lazy"
                     decoding="async"
-                    className={[
-                      'relative max-h-14 w-auto max-w-[80%] object-contain',
-                      logo.lightMark ? '' : 'brightness-0 invert',
-                    ].join(' ')}
+                    className="relative max-h-14 w-auto max-w-[80%] object-contain"
                   />
                 ) : (
                   // Clients without a logo asset keep their name as text.
@@ -157,32 +161,49 @@ function ArrowIcon({ dir }: { dir: 'left' | 'right' }) {
   );
 }
 
+const mod = (a: number, b: number) => ((a % b) + b) % b;
+
 export function ScrollReelTestimonials({
   testimonials,
-  reelItems,
 }: {
   testimonials: Testimonial[];
-  /** Names shown in the reel columns; defaults to the testimonial companies. */
-  reelItems?: string[];
 }) {
   const reduce = useReducedMotion();
-  // `prev` keeps the outgoing quote mounted for its exit animation.
-  const [state, setState] = useState<{ index: number; prev: number | null }>({
-    index: 0,
+  // `step` is a cumulative cursor (never wrapped while animating) so the reel
+  // always travels one tile in the direction of travel; the active testimonial
+  // is `step mod count`. `prev` keeps the outgoing quote mounted for its exit.
+  const [state, setState] = useState<{ step: number; prev: number | null }>({
+    step: 0,
     prev: null,
   });
+  const [instant, setInstant] = useState(false);
   const [paused, setPaused] = useState(false);
   const resumeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const count = testimonials.length;
+  // Virtual loop length: even, so the two columns (even / odd virtual
+  // indices) hold the same number of tiles and a full lap is a whole number
+  // of tiles in each. Odd counts are doubled.
+  const loop = count % 2 === 0 ? count : count * 2;
+  const index = mod(state.step, count);
   const paginate = useCallback(
     (dir: number) =>
-      setState((s) => ({
-        index: (s.index + dir + count) % count,
-        prev: s.index,
-      })),
+      setState((s) => ({ step: s.step + dir, prev: mod(s.step, count) })),
     [count]
   );
+
+  // Once the cursor leaves [0, loop), snap it back by whole laps after the
+  // slide finishes. The repeated tiles are identical, so the jump (with
+  // transitions off for a frame) is invisible.
+  useEffect(() => {
+    if (state.step >= 0 && state.step < loop) return;
+    const t = setTimeout(() => {
+      setInstant(true);
+      setState((s) => ({ ...s, step: mod(s.step, loop) }));
+      requestAnimationFrame(() => requestAnimationFrame(() => setInstant(false)));
+    }, 800);
+    return () => clearTimeout(t);
+  }, [state.step, loop]);
 
   // Auto-advance; the interval is torn down whenever hover pauses it (or
   // reduced motion disables it) and recreated on resume.
@@ -217,13 +238,15 @@ export function ScrollReelTestimonials({
     }
   };
 
-  const current = testimonials[state.index];
-  const names =
-    reelItems && reelItems.length > 0
-      ? reelItems
-      : testimonials.map((t) => t.company);
-  const colA = names.filter((_, i) => i % 2 === 0);
-  const colB = names.filter((_, i) => i % 2 === 1);
+  const current = testimonials[index];
+  // Column A holds even virtual indices top→bottom; column B holds odd ones
+  // reversed, so as the cursor advances A slides up and B slides down.
+  const half = loop / 2;
+  const companyAt = (i: number) => testimonials[i % count].company;
+  const colA = Array.from({ length: half }, (_, k) => companyAt(2 * k));
+  const colB = Array.from({ length: half }, (_, k) => companyAt(2 * (half - 1 - k) + 1));
+  const centerA = state.step / 2;
+  const centerB = half - 1 - (state.step - 1) / 2;
 
   return (
     <div
@@ -238,8 +261,8 @@ export function ScrollReelTestimonials({
       <div className="flex flex-col lg:flex-row">
         {/* Reel — two counter-rotating columns of client tiles */}
         <div className="relative flex h-56 gap-3 overflow-hidden border-b border-white/10 p-4 lg:h-[26rem] lg:w-[38%] lg:border-b-0 lg:border-r">
-          <ReelColumn items={colA} direction="up" highlight={current.company} />
-          <ReelColumn items={colB} direction="down" highlight={current.company} />
+          <ReelColumn items={colA} center={centerA} instant={instant} />
+          <ReelColumn items={colB} center={centerB} instant={instant} />
           {/* Edge fades so tiles dissolve instead of clipping */}
           <div className="pointer-events-none absolute inset-x-0 top-0 h-14 bg-gradient-to-b from-ink to-transparent" />
           <div className="pointer-events-none absolute inset-x-0 bottom-0 h-14 bg-gradient-to-t from-ink to-transparent" />
@@ -248,7 +271,7 @@ export function ScrollReelTestimonials({
         {/* Featured quote + controls */}
         <div className="flex flex-1 flex-col justify-between gap-10 p-7 md:p-10 lg:p-12">
           <div aria-live="polite" className="relative min-h-[8rem] md:min-h-[10rem]">
-            <blockquote key={state.index} className={QUOTE_CLASSES}>
+            <blockquote key={state.step} className={QUOTE_CLASSES}>
               &ldquo;
               <RisingChars text={current.quote} animate={!reduce} />
               &rdquo;
@@ -279,7 +302,7 @@ export function ScrollReelTestimonials({
 
             <div className="flex items-center gap-3">
               <span className="mr-1 text-xs tabular-nums tracking-[0.22em] text-white/35">
-                {String(state.index + 1).padStart(2, '0')} /{' '}
+                {String(index + 1).padStart(2, '0')} /{' '}
                 {String(count).padStart(2, '0')}
               </span>
               <button

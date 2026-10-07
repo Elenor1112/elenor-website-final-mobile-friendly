@@ -2,8 +2,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { getSiteSettings } from '@/lib/data/settings';
 import { getServices } from '@/lib/data/services';
-import { getMenu } from '@/lib/data/navigation';
-import elenorLogo from '@/assets/elenor final logo-01.png';
+import { getMenu } from '@/lib/data/navigation';import elenorLogo from '@/assets/elenor final logo-01.png';
 
 export async function Footer() {
   const [site, services, companyLinks] = await Promise.all([

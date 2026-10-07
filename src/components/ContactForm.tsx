@@ -74,7 +74,7 @@ export function ContactForm({
           </select>
         </label>
         <label className="block">
-          <span className="mb-1.5 block text-xs text-white/50">Budget range</span>
+          <span className="mb-1.5 block text-xs text-white/50">Monthly budget</span>
           <select name="budget" className={field} defaultValue="">
             <option value="" className="bg-ink">Optional</option>
             {budgets.map((b) => (

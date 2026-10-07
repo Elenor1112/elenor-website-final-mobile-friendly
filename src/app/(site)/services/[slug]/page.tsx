@@ -94,7 +94,7 @@ export default async function ServiceDetail({ params }: { params: { slug: string
             </p>
             <div className="mt-9 flex flex-wrap gap-4">
               <Link href="/contact" className="btn-primary">Start a project →</Link>
-              <Link href="/work" className="btn-ghost">See related work</Link>
+              <Link href={`/work?service=${s.slug}`} className="btn-ghost">See related work</Link>
             </div>
           </div>
           {sliderImages.length > 0 ? (

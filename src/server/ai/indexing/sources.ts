@@ -6,6 +6,7 @@ import { getPage } from '@/lib/data/pages';
 import { getPosts } from '@/lib/data/posts';
 import { getServices } from '@/lib/data/services';
 import { getContactSettings, getSiteSettings } from '@/lib/data/settings';
+import { hours24 } from '@/lib/hours';
 import { getTestimonials } from '@/lib/data/testimonials';
 import { getCaseStudies } from '@/lib/data/work';
 
@@ -210,7 +211,7 @@ async function pagesToDocuments(): Promise<KnowledgeDocument[]> {
 async function companyToDocument(): Promise<KnowledgeDocument[]> {
   const [site, contact] = await Promise.all([getSiteSettings(), getContactSettings()]);
   const address = site.address;
-  const hours = site.hours;
+  const hours = { ...site.hours, ...hours24(site.hours.opens, site.hours.closes) };
 
   return [
     {

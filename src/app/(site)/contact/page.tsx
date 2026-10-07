@@ -4,7 +4,7 @@ import { ContactForm } from '@/components/ContactForm';
 import { getSiteSettings, getContactSettings } from '@/lib/data/settings';
 import { getServices } from '@/lib/data/services';
 import { hubPageMetadata } from '@/lib/data/seo';
-
+import { REQUESTS_EMAIL } from '@/lib/contact';
 export function generateMetadata(): Promise<Metadata> {
   return hubPageMetadata('contact', {
     title: 'Contact — Cairo, Egypt',
@@ -24,7 +24,7 @@ export default async function ContactPage() {
   const mapsQuery = encodeURIComponent(
     `${site.address.street}, ${site.address.locality}, ${site.address.region}, ${site.address.countryName}`,
   );
-  const mapSrc = contact.mapEmbedSrc || `https://www.google.com/maps?q=${mapsQuery}&output=embed`;
+  const mapSrc =contact.mapEmbedSrc || `https://www.google.com/maps?q=${mapsQuery}&output=embed`;
 
   return (
     <>
@@ -60,9 +60,9 @@ export default async function ContactPage() {
                   <span>WhatsApp</span>
                   <span className="text-brand-cyan">Message us →</span>
                 </a>
-                <a href={`mailto:${site.email}`} className="max-md:-my-2.5 max-md:min-h-[44px] max-md:py-2.5 flex items-center justify-between text-white/70 hover:text-white">
+                <a href={`mailto:${REQUESTS_EMAIL}`} className="max-md:-my-2.5 max-md:min-h-[44px] max-md:py-2.5 flex items-center justify-between text-white/70 hover:text-white">
                   <span>Email</span>
-                  <span className="text-white">{site.email}</span>
+                  <span className="text-white">{REQUESTS_EMAIL}</span>
                 </a>
                 <div className="flex items-start justify-between gap-6 text-white/70">
                   <span>Address</span>

@@ -411,29 +411,68 @@ export function ServicesAnimation() {
       // instead of snapping back to the top of the loop.
       const animations = [tl, spinRing];
 
+      // Hover tweens are tracked so leave() can stop them: one still running
+      // when the pointer leaves would keep pushing the hovered label/icon back
+      // to its hover state after the timeline has taken over again.
+      let hoverTweens: gsap.core.Tween[] = [];
+      const killHover = () => {
+        hoverTweens.forEach((t) => t.kill());
+        hoverTweens = [];
+      };
+
+      // Which label / icon the timeline is showing at time t. These mirror the
+      // schedule built above: label k is on screen from its entrance until its
+      // exit slide starts, and icon k is lit from its pop until its decay.
+      const labelShownAt = (k: number, t: number) =>
+        t >= k * STEP && t < (k + 1) * STEP - LABEL_SLIDE - LABEL_GAP;
+      const iconLitAt = (k: number, t: number) =>
+        t >= k * STEP + LABEL_LEAD && t < k * STEP + LABEL_LEAD + DECAY_AT;
+
       const enter = (i: number) => {
+        killHover();
         animations.forEach((a) => a.pause());
         // The paused timeline is still holding whatever the spotlight was
         // mid-way through, so the hovered icon is promoted and every other one
         // is pushed back to rest explicitly — otherwise a half-lit neighbour
         // stays lit underneath the hover.
-        gsap.to(icons[i], { scale: PEAK_SCALE, opacity: 1, duration: 0.22, ease: 'power2.out' });
-        gsap.to(
-          icons.filter((_, k) => k !== i),
-          { scale: REST_SCALE, opacity: REST_OPACITY, duration: 0.22, ease: 'power2.out' },
-        );
-        gsap.to(labels[i], { opacity: 1, yPercent: 0, duration: 0.22, ease: 'power2.out' });
-        gsap.to(
-          labels.filter((_, k) => k !== i),
-          { opacity: 0, duration: 0.22, ease: 'power2.out' },
-        );
+        hoverTweens = [
+          gsap.to(icons[i], { scale: PEAK_SCALE, opacity: 1, duration: 0.22, ease: 'power2.out' }),
+          gsap.to(
+            icons.filter((_, k) => k !== i),
+            { scale: REST_SCALE, opacity: REST_OPACITY, duration: 0.22, ease: 'power2.out' },
+          ),
+          gsap.to(labels[i], { opacity: 1, yPercent: 0, duration: 0.22, ease: 'power2.out' }),
+          gsap.to(
+            labels.filter((_, k) => k !== i),
+            { opacity: 0, duration: 0.22, ease: 'power2.out' },
+          ),
+        ];
       };
 
       const leave = () => {
+        killHover();
+        // Put every label and icon back to what the timeline shows at its
+        // paused time. The hover left the hovered label centred and visible
+        // (and its icon lit), and the timeline won't touch either again until
+        // that service's own turn comes round — up to a full lap later — so
+        // without this the hovered name sat in the middle while the next
+        // labels slid in on top of it.
+        const t = tl.time();
+        labels.forEach((label, k) => {
+          gsap.set(label, labelShownAt(k, t) ? { opacity: 1, yPercent: 0 } : { opacity: 0, yPercent: 100 });
+        });
+        icons.forEach((icon, k) => {
+          gsap.set(
+            icon,
+            iconLitAt(k, t)
+              ? { scale: PEAK_SCALE, opacity: 1 }
+              : { scale: REST_SCALE, opacity: REST_OPACITY },
+          );
+        });
         // Hand control back to the timeline. invalidate() drops the tween
         // start values GSAP recorded before the hover overrode them, so the
-        // next cycle animates from where things actually are rather than
-        // jumping to a stale remembered state.
+        // remaining tweens animate from the state restored above rather than
+        // jumping to a stale remembered one.
         tl.invalidate();
         animations.forEach((a) => a.resume());
       };

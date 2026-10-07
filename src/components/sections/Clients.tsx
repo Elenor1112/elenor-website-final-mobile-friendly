@@ -7,16 +7,14 @@ import {
 } from '@/components/ui/scroll-reel-testimonials';
 import type { SectionData } from '@/lib/validation/sections';
 
-// Client proof section: heading + scroll-reel testimonials. The reel columns
-// carry the curated client NAMES as real text (crawlable + accessible).
+// Client proof section: heading + scroll-reel testimonials. The reel shows one
+// logo per testimonial, kept in step with the featured quote.
 export function Clients({
   data,
   testimonials,
-  reelItems,
 }: {
   data: SectionData<'clients'>;
   testimonials: Testimonial[];
-  reelItems: string[];
 }) {
   return (
     <section className="relative z-10 border-y border-white/10 bg-white/[0.02] py-24">
@@ -29,7 +27,7 @@ export function Clients({
         </Reveal>
 
         <Reveal delay={120} className="mt-14">
-          <ScrollReelTestimonials testimonials={testimonials} reelItems={reelItems} />
+          <ScrollReelTestimonials testimonials={testimonials} />
         </Reveal>
       </div>
     </section>

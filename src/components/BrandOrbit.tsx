@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import Image, { type StaticImageData } from 'next/image';
+import Link from 'next/link';
 import './BrandOrbit.css';
 
 import elenorLogo from '@/assets/elenor logo For Web-02.png';
@@ -31,6 +32,8 @@ export interface Brand {
    * drew a small pseudo-random scale.
    */
   sizeBoost?: number;
+  /** Where clicking the orb goes — the brand's case study, or /work. */
+  href?: string;
 }
 
 export interface BrandOrbitProps {
@@ -48,17 +51,17 @@ const ORB_WHITE = '#ffffff';
 const ORB_NONE = 'transparent';
 
 const FALLBACK_BRANDS: Brand[] = [
-  { name: 'Zoetis', logo: zoetisLogo, color: ORB_NONE },
-  { name: 'Duravit', logo: duravitLogo, color: ORB_WHITE },
-  { name: 'DOTS', logo: dotsLogo, color: ORB_NONE },
-  { name: 'Saint-Gobain', logo: saintGobainLogo, color: ORB_WHITE },
-  { name: 'GSK', logo: gskLogo, color: ORB_NONE },
-  { name: 'Commvault', logo: commvaultLogo, color: ORB_WHITE },
-  { name: 'Coca-Cola', logo: cocaColaLogo, color: ORB_NONE },
-  { name: 'Global Group', logo: globalGroupLogo, color: ORB_WHITE },
-  { name: 'ABC Hospital', logo: abcLogo, color: ORB_NONE },
-  { name: 'Go-Bus', logo: goBusLogo, color: ORB_NONE },
-  { name: 'Al-Nesr Al-Jawhari', logo: alNesrAlJawhariLogo, color: ORB_WHITE },
+  { name: 'Zoetis', logo: zoetisLogo, color: ORB_NONE, href: '/work/zoetis-social' },
+  { name: 'Duravit', logo: duravitLogo, color: ORB_WHITE, href: '/work/duravit-event' },
+  { name: 'DOTS', logo: dotsLogo, color: ORB_NONE, href: '/work/dots-brand' },
+  { name: 'Saint-Gobain', logo: saintGobainLogo, color: ORB_WHITE, href: '/work/saint-gobain-social' },
+  { name: 'GSK', logo: gskLogo, color: ORB_NONE, href: '/work' },
+  { name: 'Commvault', logo: commvaultLogo, color: ORB_WHITE, href: '/work' },
+  { name: 'Coca-Cola', logo: cocaColaLogo, color: ORB_NONE, href: '/work/coca-cola' },
+  { name: 'Global Group', logo: globalGroupLogo, color: ORB_WHITE, href: '/work/global-napi-video' },
+  { name: 'ABC Hospital', logo: abcLogo, color: ORB_NONE, href: '/work' },
+  { name: 'Go-Bus', logo: goBusLogo, color: ORB_NONE, href: '/work' },
+  { name: 'Al-Nesr Al-Jawhari', logo: alNesrAlJawhariLogo, color: ORB_WHITE, href: '/work/al-nesr-al-jawhari' },
 ];
 
 // Initials fallback when a brand has no explicit label, e.g. "Saint-Gobain" → "SG".
@@ -143,22 +146,15 @@ function BrandOrb({
   onMouseEnter?: () => void;
   onMouseLeave?: () => void;
 }) {
-  return (
-    <span
-      className={`brand-orbit__orb${brand.logo ? ' brand-orbit__orb--logo' : ''}`}
-      style={
-        brand.color || style
-          ? { ...(brand.color ? { backgroundColor: brand.color } : undefined), ...style }
-          : undefined
-      }
-      role="img"
-      aria-label={brand.name}
-      tabIndex={0}
-      onMouseEnter={onMouseEnter}
-      onMouseLeave={onMouseLeave}
-    >
+  const className = `brand-orbit__orb${brand.logo ? ' brand-orbit__orb--logo' : ''}`;
+  const orbStyle =
+    brand.color || style
+      ? { ...(brand.color ? { backgroundColor: brand.color } : undefined), ...style }
+      : undefined;
+  const content = (
+    <>
       {brand.logo ? (
-        // Decorative inside a role="img" span that already carries the label.
+        // Decorative inside an element that already carries the label.
         <Image
           src={brand.logo}
           alt=""
@@ -172,6 +168,36 @@ function BrandOrb({
       <span className="brand-orbit__tooltip" role="tooltip">
         {brand.name}
       </span>
+    </>
+  );
+
+  if (brand.href) {
+    return (
+      <Link
+        href={brand.href}
+        className={className}
+        style={orbStyle}
+        aria-label={brand.name}
+        draggable={false}
+        onMouseEnter={onMouseEnter}
+        onMouseLeave={onMouseLeave}
+      >
+        {content}
+      </Link>
+    );
+  }
+
+  return (
+    <span
+      className={className}
+      style={orbStyle}
+      role="img"
+      aria-label={brand.name}
+      tabIndex={0}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
+    >
+      {content}
     </span>
   );
 }

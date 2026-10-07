@@ -4,6 +4,7 @@ import type { SiteSettings } from '@/lib/validation/settings';
 import type { PublicService } from '@/lib/data/services';
 import type { PublicCaseStudy } from '@/lib/data/work';
 import type { PublicPost } from '@/lib/data/posts';
+import { hours24 } from '@/lib/hours';
 
 const orgId = (siteUrl: string) => `${siteUrl}/#organization`;
 
@@ -30,8 +31,7 @@ export function organizationSchema(site: SiteSettings) {
     openingHoursSpecification: {
       '@type': 'OpeningHoursSpecification',
       dayOfWeek: site.hours.days,
-      opens: site.hours.opens,
-      closes: site.hours.closes,
+      ...hours24(site.hours.opens, site.hours.closes),
     },
     sameAs: Object.values(site.social).filter(Boolean),
     founder: { '@type': 'Person', name: site.founder.name, jobTitle: site.founder.jobTitle },

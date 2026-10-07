@@ -48,14 +48,13 @@ export async function WorkHero() {
 
           <div className="mt-8 grid items-center gap-10 md:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] md:gap-8">
             <div>
-              <p className="eyebrow">Portfolio</p>
-              <h1 className="mt-5 text-balance font-display text-4xl font-bold leading-[1.02] tracking-tight md:text-6xl">
+              <h1 className="text-balance font-display text-4xl font-bold leading-[1.02] tracking-tight md:text-6xl">
                 Our Work.
               </h1>
               <p className="mt-7 max-w-2xl text-lg leading-relaxed text-white/70">
                 A selection of campaigns, brand builds, and digital products we’ve delivered across
                 pharma, FMCG, real estate, automotive, hospitality, and professional services —
-                filterable by industry.
+                filterable by industry or service.
               </p>
             </div>
 

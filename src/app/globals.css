@@ -197,8 +197,9 @@ body:has(#elenor-intro) #site-nav {
 }
 
 /* ScrollReelTestimonials (components/ui/scroll-reel-testimonials.tsx).
-   char-rise/exit animate the featured quote; up/down drive the two
-   counter-rotating reel columns (content doubled, track moves -50%). */
+   char-rise/exit animate the featured quote. up/down are no longer used by
+   the logo reel (it is transition-driven) but ServicesShowcase's belt still
+   loops on them. */
 @keyframes scroll-reel-char-rise {
   from {
     opacity: 0;
