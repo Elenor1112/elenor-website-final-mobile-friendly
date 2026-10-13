@@ -1,14 +1,13 @@
 'use client';
 
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
+import Image from 'next/image';
 import {
   ArrowDown,
   Check,
   Copy,
-  MessageCircle,
   RefreshCw,
   Send,
-  Sparkles,
   Square,
   Trash2,
   X,
@@ -30,6 +29,21 @@ const SUGGESTED_QUESTIONS = [
   'Show your latest work.',
   'What industries do you specialize in?',
 ];
+
+const ASSISTANT_ICON = '/assets/chat/assistant-icon.webp';
+
+function AssistantAvatar({ size }: { size: number }) {
+  return (
+    <Image
+      src={ASSISTANT_ICON}
+      alt=""
+      aria-hidden
+      width={size}
+      height={size}
+      className="h-full w-full rounded-full object-cover"
+    />
+  );
+}
 
 function formatTime(timestamp: number): string {
   return new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -84,10 +98,10 @@ function MessageBubble({ message }: { message: ChatMessage }) {
         className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[0.7rem] font-semibold ${
           isUser
             ? 'bg-white/10 text-white/70'
-            : 'bg-gradient-to-br from-brand to-brand-cyan text-ink'
+            : 'overflow-hidden bg-black'
         }`}
       >
-        {isUser ? 'You' : <Sparkles className="h-3.5 w-3.5" />}
+        {isUser ? 'You' : <AssistantAvatar size={28} />}
       </div>
 
       <div className={`flex min-w-0 max-w-[85%] flex-col gap-1 ${isUser ? 'items-end' : ''}`}>
@@ -261,10 +275,10 @@ export default function ChatWidget() {
         className={`fixed bottom-5 right-5 z-[60] flex h-14 w-14 items-center justify-center rounded-full shadow-[0_8px_30px_-6px_rgba(0,0,0,0.6)] transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-glow focus-visible:ring-offset-2 focus-visible:ring-offset-ink motion-safe:hover:scale-105 ${
           isOpen
             ? 'bg-white/10 text-white backdrop-blur-xl'
-            : 'bg-gradient-to-br from-brand to-brand-cyan text-ink'
+            : 'overflow-hidden bg-black ring-1 ring-brand-cyan/40'
         }`}
       >
-        {isOpen ? <X className="h-5 w-5" /> : <MessageCircle className="h-6 w-6" />}
+        {isOpen ? <X className="h-5 w-5" /> : <AssistantAvatar size={56} />}
       </button>
 
       {/* Panel */}
@@ -286,9 +300,9 @@ export default function ChatWidget() {
           <div className="flex items-center gap-2.5">
             <span
               aria-hidden
-              className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-brand to-brand-cyan text-ink"
+              className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-black"
             >
-              <Sparkles className="h-4 w-4" />
+              <AssistantAvatar size={32} />
             </span>
             <span>
               <span className="block font-display text-sm font-semibold text-white">Elenor AI</span>
@@ -371,9 +385,9 @@ export default function ChatWidget() {
                   <div className="flex gap-2.5">
                     <span
                       aria-hidden
-                      className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-brand to-brand-cyan text-ink"
+                      className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full bg-black"
                     >
-                      <Sparkles className="h-3.5 w-3.5" />
+                      <AssistantAvatar size={28} />
                     </span>
                     <TypingIndicator />
                   </div>
