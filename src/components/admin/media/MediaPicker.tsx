@@ -9,7 +9,7 @@ import * as Dialog from '@radix-ui/react-dialog';
 import { ImageIcon, Loader2, UploadCloud, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { searchMedia, type MediaItem } from '@/server/actions/media';
-import { uploadFile } from './upload';
+import { uploadFile, IMAGE_ACCEPT } from './upload';
 import { Button, Input, cn } from '../ui';
 
 export type PickedMedia = { id: string; url: string; alt: string };
@@ -125,7 +125,7 @@ export function PickerDialog({
               <input
                 ref={fileInput}
                 type="file"
-                accept="image/*"
+                accept={IMAGE_ACCEPT}
                 className="hidden"
                 onChange={(e) => e.target.files?.[0] && handleUpload(e.target.files[0])}
               />

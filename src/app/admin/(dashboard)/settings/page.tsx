@@ -8,11 +8,14 @@ import {
 } from '@/lib/data/settings';
 import { PageHeader } from '@/components/admin/ui';
 import { SettingsTabs } from './SettingsTabs';
+import { requireUser } from '@/server/auth/rbac';
 
 export const metadata: Metadata = { title: 'Settings' };
 export const dynamic = 'force-dynamic';
 
 export default async function SettingsAdminPage() {
+  await requireUser('settings:write');
+
   const [site, theme, analytics, contact, work] = await Promise.all([
     getSiteSettings(),
     getThemeSettings(),

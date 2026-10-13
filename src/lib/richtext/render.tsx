@@ -1,11 +1,14 @@
-import { generateHTML } from '@tiptap/html';
+import { generateHTML } from '@tiptap/html/server';
 import type { RichTextDoc } from '@/db/schema';
 import { richTextExtensions } from './extensions';
+import { sanitizeRichText } from './sanitize';
 
 export function richTextToHtml(doc: RichTextDoc | null | undefined): string {
-  if (!doc || !Array.isArray(doc.content) || doc.content.length === 0) return '';
+  // Sanitised at render too, so payloads saved before sanitising existed are inert.
+  const clean = sanitizeRichText(doc);
+  if (!clean || !Array.isArray(clean.content) || clean.content.length === 0) return '';
   try {
-    return generateHTML(doc as never, richTextExtensions);
+    return generateHTML(clean as never, richTextExtensions);
   } catch {
     return '';
   }

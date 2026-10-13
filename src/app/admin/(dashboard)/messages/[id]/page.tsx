@@ -7,11 +7,14 @@ import { contactMessages } from '@/db/schema';
 import { setMessageStatus } from '@/server/actions/messages';
 import { Card, PageHeader } from '@/components/admin/ui';
 import { MessageActions } from './MessageActions';
+import { requireUser } from '@/server/auth/rbac';
 
 export const metadata: Metadata = { title: 'Message' };
 export const dynamic = 'force-dynamic';
 
 export default async function MessageDetailPage({ params }: { params: { id: string } }) {
+  await requireUser('messages:write');
+
   const m = await db.query.contactMessages
     .findFirst({ where: eq(contactMessages.id, params.id) })
     .catch(() => null);

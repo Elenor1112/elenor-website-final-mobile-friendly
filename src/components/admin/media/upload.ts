@@ -113,5 +113,9 @@ export async function uploadFile(
   return registered.item;
 }
 
+/** File-input `accept` value for image pickers; mirrors the upload route's
+ *  allowlist (no SVG). */
+export const IMAGE_ACCEPT = 'image/jpeg,image/png,image/webp,image/avif,image/gif';
+
 /** File-input `accept` value for pickers that take 3D models. */
 export const MODEL_ACCEPT = MODEL_EXTENSIONS.join(',');

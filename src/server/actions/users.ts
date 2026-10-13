@@ -1,6 +1,6 @@
 'use server';
 
-import { asc, count, eq } from 'drizzle-orm';
+import { and, asc, eq, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { db } from '@/db';
 import { users } from '@/db/schema';
@@ -36,16 +36,24 @@ const userSchema = z.object({
   email: z.string().trim().toLowerCase().email(),
   name: z.string().min(1).max(200),
   role: z.enum(['SUPER_ADMIN', 'EDITOR']),
-  isActive: z.boolean().default(true),
+  // Optional so an update that omits it keeps the user's current state.
+  isActive: z.boolean().optional(),
   password: z.string().min(8).max(200).optional().or(z.literal('')),
 });
 
-async function superAdminCount(): Promise<number> {
-  const rows = await db
-    .select({ n: count() })
-    .from(users)
-    .where(eq(users.role, 'SUPER_ADMIN'));
-  return Number(rows[0]?.n ?? 0);
+const LAST_ADMIN_ERROR = 'There must always be at least one active Super Admin.';
+
+/** WHERE guard: another active Super Admin besides `id` exists. The inner
+ *  FOR UPDATE locks those rows, so when two admins demote each other at the
+ *  same moment the second statement waits, re-checks against the committed
+ *  result and matches nothing — check and write happen in one statement. */
+function anotherActiveSuperAdmin(id: string) {
+  return sql`(select count(*) from (select ${users.id} from ${users} where ${users.role} = 'SUPER_ADMIN' and ${users.isActive} = true and ${users.id} <> ${id} for update) others) >= 1`;
+}
+
+/** Concurrent guarded writes can deadlock; Postgres aborts one of them. */
+function isDeadlock(error: unknown): boolean {
+  return (error as { code?: string } | null)?.code === '40P01';
 }
 
 export async function saveUser(input: z.input<typeof userSchema>) {
@@ -54,28 +62,46 @@ export async function saveUser(input: z.input<typeof userSchema>) {
   if (!parsed.success) {
     return { ok: false as const, error: parsed.error.issues[0]?.message ?? 'Invalid input' };
   }
-  const { id, password, ...data } = parsed.data;
+  const { id, password, isActive: requestedActive, ...rest } = parsed.data;
 
   if (id) {
     const existing = await db.query.users.findFirst({ where: eq(users.id, id) });
     if (!existing) return { ok: false as const, error: 'User not found' };
+    const data = { ...rest, isActive: requestedActive ?? existing.isActive };
+
+    // Admins can't lock themselves out by demoting or deactivating their own account.
+    if (actor.id === id && (data.role !== actor.role || !data.isActive)) {
+      return { ok: false as const, error: 'You cannot change your own role or deactivate yourself.' };
+    }
 
     // Never orphan the system: keep at least one active SUPER_ADMIN.
     const losingSuperAdmin =
-      existing.role === 'SUPER_ADMIN' && (data.role !== 'SUPER_ADMIN' || !data.isActive);
-    if (losingSuperAdmin && (await superAdminCount()) <= 1) {
-      return { ok: false as const, error: 'There must always be at least one active Super Admin.' };
-    }
+      existing.role === 'SUPER_ADMIN' &&
+      existing.isActive &&
+      (data.role !== 'SUPER_ADMIN' || !data.isActive);
 
     const update: Record<string, unknown> = { ...data, updatedAt: new Date() };
     if (password) update.passwordHash = await hashPassword(password);
-    await db.update(users).set(update).where(eq(users.id, id));
+    try {
+      const updated = await db
+        .update(users)
+        .set(update)
+        .where(losingSuperAdmin ? and(eq(users.id, id), anotherActiveSuperAdmin(id)) : eq(users.id, id))
+        .returning({ id: users.id });
+      if (updated.length === 0) {
+        return { ok: false as const, error: losingSuperAdmin ? LAST_ADMIN_ERROR : 'User not found' };
+      }
+    } catch (error) {
+      if (isDeadlock(error)) return { ok: false as const, error: 'Another change was saved at the same time. Please try again.' };
+      throw error;
+    }
     if (password || !data.isActive) await revokeUserSessions(id);
     await logAudit(actor.id, 'update', 'user', id, data.email);
     return { ok: true as const, id };
   }
 
   if (!password) return { ok: false as const, error: 'A password is required for new users.' };
+  const data = { ...rest, isActive: requestedActive ?? true };
   const dupe = await db.query.users.findFirst({ where: eq(users.email, data.email) });
   if (dupe) return { ok: false as const, error: 'A user with this email already exists.' };
 
@@ -92,10 +118,19 @@ export async function deleteUser(id: string) {
   if (actor.id === id) return { ok: false as const, error: 'You cannot delete your own account.' };
   const existing = await db.query.users.findFirst({ where: eq(users.id, z.string().uuid().parse(id)) });
   if (!existing) return { ok: false as const, error: 'User not found' };
-  if (existing.role === 'SUPER_ADMIN' && (await superAdminCount()) <= 1) {
-    return { ok: false as const, error: 'There must always be at least one Super Admin.' };
+  const guarded = existing.role === 'SUPER_ADMIN' && existing.isActive;
+  try {
+    const deleted = await db
+      .delete(users)
+      .where(guarded ? and(eq(users.id, id), anotherActiveSuperAdmin(id)) : eq(users.id, id))
+      .returning({ id: users.id });
+    if (deleted.length === 0) {
+      return { ok: false as const, error: guarded ? LAST_ADMIN_ERROR : 'User not found' };
+    }
+  } catch (error) {
+    if (isDeadlock(error)) return { ok: false as const, error: 'Another change was saved at the same time. Please try again.' };
+    throw error;
   }
-  await db.delete(users).where(eq(users.id, id));
   await logAudit(actor.id, 'delete', 'user', id, existing.email);
   return { ok: true as const };
 }

@@ -9,7 +9,7 @@ const IMAGE_CONTENT_TYPES = [
   'image/webp',
   'image/avif',
   'image/gif',
-  'image/svg+xml',
+  // No image/svg+xml: an SVG can carry script that runs when the file is opened.
 ];
 
 // .glb/.gltf have real IANA types; .fbx/.obj do not, so browsers send an empty

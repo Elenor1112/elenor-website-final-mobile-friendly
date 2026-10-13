@@ -4,6 +4,7 @@ import { asc } from 'drizzle-orm';
 import { db } from '@/db';
 import { pages } from '@/db/schema';
 import { Card, PageHeader } from '@/components/admin/ui';
+import { requireUser } from '@/server/auth/rbac';
 
 export const metadata: Metadata = { title: 'Pages' };
 export const dynamic = 'force-dynamic';
@@ -19,6 +20,8 @@ const DESCRIPTIONS: Record<string, string> = {
 };
 
 export default async function PagesAdminPage() {
+  await requireUser();
+
   const rows = await db.select().from(pages).orderBy(asc(pages.slug));
   const order = ['home', 'about', 'services', 'work', 'blog', 'faq', 'contact'];
   const sorted = [...rows].sort((a, b) => order.indexOf(a.slug) - order.indexOf(b.slug));

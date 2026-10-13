@@ -7,6 +7,7 @@ import { getCaseStudyForEdit } from '@/server/actions/work';
 import { getWorkSettings } from '@/lib/data/settings';
 import { CaseStudyForm, type CaseStudyFormValue } from '../CaseStudyForm';
 import { emptySeo } from '@/components/admin/SeoFieldset';
+import { requireUser } from '@/server/auth/rbac';
 
 export const metadata: Metadata = { title: 'Edit case study' };
 export const dynamic = 'force-dynamic';
@@ -14,6 +15,8 @@ export const dynamic = 'force-dynamic';
 type Media = { id: string; url: string; alt: string } | null;
 
 export default async function EditCaseStudyPage({ params }: { params: { id: string } }) {
+  await requireUser();
+
   const [row, serviceRows, workSettings] = await Promise.all([
     getCaseStudyForEdit(params.id).catch(() => null) as Promise<
       | (NonNullable<Awaited<ReturnType<typeof getCaseStudyForEdit>>> & {

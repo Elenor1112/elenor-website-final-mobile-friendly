@@ -2,14 +2,7 @@ import { desc } from 'drizzle-orm';
 import { db } from '@/db';
 import { chatLeads } from '@/db/schema';
 import { can, getCurrentUser } from '@/server/auth/rbac';
-
-/** Quotes a CSV cell and neutralises spreadsheet formula injection. */
-function csvCell(value: string): string {
-  // A leading =, +, - or @ makes Excel/Sheets evaluate the cell; lead values
-  // come from visitor input, so prefix those with a quote.
-  const safe = /^[=+\-@]/.test(value) ? `'${value}` : value;
-  return /[",\n\r]/.test(safe) ? `"${safe.replace(/"/g, '""')}"` : safe;
-}
+import { csvCell } from '@/lib/csv';
 
 // CSV export of chat-captured leads, highest score first.
 export async function GET() {

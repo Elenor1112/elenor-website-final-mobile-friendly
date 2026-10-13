@@ -7,6 +7,7 @@ import { menuItems, menus } from '@/db/schema';
 import { requireUser } from '@/server/auth/rbac';
 import { revalidateMenus } from '@/lib/revalidate';
 import { logAudit } from './audit';
+import { safeHref } from '@/lib/validation/url';
 
 export async function getMenusForEdit() {
   await requireUser();
@@ -33,7 +34,7 @@ export async function getMenusForEdit() {
 
 const itemSchema = z.object({
   label: z.string().min(1).max(120),
-  url: z.string().min(1).max(500),
+  url: safeHref().pipe(z.string().min(1).max(500)),
   isExternal: z.boolean().default(false),
   openInNewTab: z.boolean().default(false),
   isEnabled: z.boolean().default(true),

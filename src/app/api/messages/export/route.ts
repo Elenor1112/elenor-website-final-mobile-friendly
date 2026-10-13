@@ -2,10 +2,7 @@ import { and, desc, eq, ilike, or, type SQL } from 'drizzle-orm';
 import { db } from '@/db';
 import { contactMessages } from '@/db/schema';
 import { can, getCurrentUser } from '@/server/auth/rbac';
-
-function csvCell(value: string): string {
-  return /[",\n\r]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value;
-}
+import { csvCell } from '@/lib/csv';
 
 // CSV export of the inbox, honoring the same q/status filters as the list.
 export async function GET(request: Request) {

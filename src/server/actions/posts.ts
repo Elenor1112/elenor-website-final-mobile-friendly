@@ -106,6 +106,9 @@ export async function setPostStatus(
   status: 'draft' | 'published' | 'archived',
 ): Promise<ActionResult> {
   const user = await requireUser('content:write');
+  // Arguments arrive straight from the client; TypeScript types are not enforced at runtime.
+  id = z.string().uuid().parse(id);
+  status = z.enum(['draft', 'published', 'archived']).parse(status);
   const existing = await db.query.posts.findFirst({ where: eq(posts.id, id) });
   if (!existing) return { ok: false, error: 'Post not found' };
   await db

@@ -4,11 +4,14 @@ import { db } from '@/db';
 import { faqCategories, faqs } from '@/db/schema';
 import { PageHeader } from '@/components/admin/ui';
 import { FaqManager } from './FaqManager';
+import { requireUser } from '@/server/auth/rbac';
 
 export const metadata: Metadata = { title: 'FAQ' };
 export const dynamic = 'force-dynamic';
 
 export default async function FaqAdminPage() {
+  await requireUser();
+
   const [categories, items] = await Promise.all([
     db.select().from(faqCategories).orderBy(asc(faqCategories.sortOrder)),
     db.select().from(faqs).orderBy(asc(faqs.sortOrder)),

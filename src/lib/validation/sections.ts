@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { safeHref } from './url';
 
 // One zod schema per page-section `type`. Section rows store their content in
 // a jsonb `data` column; these schemas are the contract between the admin
@@ -6,7 +7,7 @@ import { z } from 'zod';
 // partially-filled section never crashes a render.
 
 const cta = (label: string, href: string) =>
-  z.object({ label: z.string().default(label), href: z.string().default(href) }).prefault({});
+  z.object({ label: z.string().default(label), href: safeHref().default(href) }).prefault({});
 
 /* ---------------------------------- home ---------------------------------- */
 
@@ -33,7 +34,7 @@ export const heroSchema = z.object({
 
 export const philosophySchema = z.object({
   eyebrow: z.string().default('Our philosophy'),
-  eyebrowHref: z.string().default('/about'),
+  eyebrowHref: safeHref().default('/about'),
   heading: z.string().default('We exist to build real brand presence — and measurable growth.'),
   body: z
     .string()

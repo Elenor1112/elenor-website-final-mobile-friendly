@@ -1,5 +1,5 @@
 import { relations } from 'drizzle-orm';
-import { boolean, integer, pgTable, text, uuid } from 'drizzle-orm/pg-core';
+import { boolean, integer, pgTable, primaryKey, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 import { timestamps } from './helpers';
 import { media } from './media';
 import { users } from './auth';
@@ -36,6 +36,18 @@ export const auditLogs = pgTable('audit_logs', {
   snapshot: text('snapshot'),
   createdAt: timestamps.createdAt,
 });
+
+// Fixed-window request counters shared by every server instance (chat, contact
+// form). One row per key per window; old windows are pruned opportunistically.
+export const rateLimits = pgTable(
+  'rate_limits',
+  {
+    key: text('key').notNull(),
+    windowStart: timestamp('window_start', { withTimezone: true }).notNull(),
+    count: integer('count').default(1).notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.key, t.windowStart] })],
+);
 
 export const testimonialsRelations = relations(testimonials, ({ one }) => ({
   avatar: one(media, { fields: [testimonials.avatarId], references: [media.id] }),

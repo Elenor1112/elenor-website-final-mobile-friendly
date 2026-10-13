@@ -5,6 +5,7 @@ import { db } from '@/db';
 import { contactMessages } from '@/db/schema';
 import { Badge, Button, Card, PageHeader } from '@/components/admin/ui';
 import { ListToolbar, Pagination } from '@/components/admin/ListToolbar';
+import { requireUser } from '@/server/auth/rbac';
 
 export const metadata: Metadata = { title: 'Inbox' };
 export const dynamic = 'force-dynamic';
@@ -16,6 +17,8 @@ export default async function MessagesAdminPage({
 }: {
   searchParams: { q?: string; status?: string; page?: string };
 }) {
+  await requireUser('messages:write');
+
   const page = Math.max(1, Number(searchParams.page) || 1);
   const conditions: SQL[] = [];
   if (searchParams.q) {

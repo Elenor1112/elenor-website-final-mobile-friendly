@@ -2,11 +2,7 @@ import { and, asc, desc, eq, ilike, or, type SQL } from 'drizzle-orm';
 import { db } from '@/db';
 import { chatConversations, chatMessages } from '@/db/schema';
 import { can, getCurrentUser } from '@/server/auth/rbac';
-
-function csvCell(value: string): string {
-  const safe = /^[=+\-@]/.test(value) ? `'${value}` : value;
-  return /[",\n\r]/.test(safe) ? `"${safe.replace(/"/g, '""')}"` : safe;
-}
+import { csvCell } from '@/lib/csv';
 
 // One row per message so transcripts stay readable in a spreadsheet.
 export async function GET(request: Request) {

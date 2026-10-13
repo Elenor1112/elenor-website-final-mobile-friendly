@@ -5,11 +5,14 @@ import { db } from '@/db';
 import { services } from '@/db/schema';
 import { Button, PageHeader } from '@/components/admin/ui';
 import { ServicesList } from './ServicesList';
+import { requireUser } from '@/server/auth/rbac';
 
 export const metadata: Metadata = { title: 'Services' };
 export const dynamic = 'force-dynamic';
 
 export default async function ServicesAdminPage() {
+  await requireUser();
+
   const rows = await db
     .select({
       id: services.id,

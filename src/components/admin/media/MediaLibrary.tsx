@@ -19,7 +19,7 @@ import {
   replaceMedia,
   type MediaItem,
 } from '@/server/actions/media';
-import { uploadFile } from './upload';
+import { uploadFile, IMAGE_ACCEPT } from './upload';
 import { Button, Card, Field, Input, PageHeader, Select, Textarea, cn } from '../ui';
 import { ConfirmDialog } from '../ConfirmDialog';
 
@@ -117,7 +117,7 @@ export function MediaLibrary() {
             <input
               ref={fileInput}
               type="file"
-              accept="image/*"
+              accept={IMAGE_ACCEPT}
               multiple
               className="hidden"
               onChange={(e) => e.target.files && handleFiles(e.target.files)}
@@ -407,7 +407,7 @@ function EditDialog({
                   <input
                     ref={replaceInput}
                     type="file"
-                    accept="image/*"
+                    accept={IMAGE_ACCEPT}
                     className="hidden"
                     onChange={(e) => e.target.files?.[0] && replace(e.target.files[0])}
                   />

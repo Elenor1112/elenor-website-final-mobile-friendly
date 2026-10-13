@@ -6,6 +6,7 @@ import { postCategories } from '@/db/schema';
 import { getPostForEdit } from '@/server/actions/posts';
 import { PostForm, type PostFormValue } from '../PostForm';
 import { emptySeo } from '@/components/admin/SeoFieldset';
+import { requireUser } from '@/server/auth/rbac';
 
 export const metadata: Metadata = { title: 'Edit post' };
 export const dynamic = 'force-dynamic';
@@ -19,6 +20,8 @@ function toLocalInput(d: Date | null): string {
 }
 
 export default async function EditPostPage({ params }: { params: { id: string } }) {
+  await requireUser();
+
   const [row, categories] = await Promise.all([
     getPostForEdit(params.id).catch(() => null) as Promise<
       | (NonNullable<Awaited<ReturnType<typeof getPostForEdit>>> & {

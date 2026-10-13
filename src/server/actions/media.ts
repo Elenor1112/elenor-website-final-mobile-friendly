@@ -19,6 +19,7 @@ import {
 } from '@/db/schema';
 import { requireUser } from '@/server/auth/rbac';
 import { revalidateEverything, revalidateMedia } from '@/lib/revalidate';
+import { blobUrl } from '@/lib/validation/url';
 
 export type MediaItem = {
   id: string;
@@ -53,7 +54,7 @@ const toItem = (m: typeof media.$inferSelect): MediaItem => ({
 /* ------------------------------- register ---------------------------------- */
 
 const registerSchema = z.object({
-  url: z.string().url(),
+  url: blobUrl(),
   filename: z.string().min(1).max(300),
   mimeType: z.string().max(100),
   sizeBytes: z.number().int().nonnegative(),
@@ -96,7 +97,8 @@ export async function updateMedia(input: z.infer<typeof updateSchema>) {
 /** Replace the file behind a media row (same row id, new blob URL). */
 export async function replaceMedia(input: z.infer<typeof registerSchema> & { id: string }) {
   await requireUser('media:write');
-  const { id, ...rest } = input;
+  const { id: rawId, ...rest } = input;
+  const id = z.string().uuid().parse(rawId);
   const data = registerSchema.parse(rest);
   const existing = await db.query.media.findFirst({ where: eq(media.id, id) });
   if (!existing) return { ok: false as const, error: 'Media not found' };
@@ -113,6 +115,7 @@ export async function replaceMedia(input: z.infer<typeof registerSchema> & { id:
 
 export async function mediaUsage(id: string): Promise<string[]> {
   await requireUser('media:write');
+  id = z.string().uuid().parse(id);
   const uses: string[] = [];
   const idLike = `%${id}%`;
 
@@ -159,10 +162,10 @@ export async function deleteMedia(id: string) {
 
 export async function createFolder(name: string, parentId: string | null) {
   await requireUser('media:write');
-  const clean = z.string().min(1).max(100).parse(name.trim());
+  const clean = z.string().min(1).max(100).parse(String(name).trim());
   const [row] = await db
     .insert(mediaFolders)
-    .values({ name: clean, parentId })
+    .values({ name: clean, parentId: z.string().uuid().nullable().parse(parentId) })
     .onConflictDoNothing()
     .returning();
   revalidateMedia();
@@ -173,14 +176,15 @@ export async function renameFolder(id: string, name: string) {
   await requireUser('media:write');
   await db
     .update(mediaFolders)
-    .set({ name: z.string().min(1).max(100).parse(name.trim()) })
-    .where(eq(mediaFolders.id, id));
+    .set({ name: z.string().min(1).max(100).parse(String(name).trim()) })
+    .where(eq(mediaFolders.id, z.string().uuid().parse(id)));
   revalidateMedia();
   return { ok: true as const };
 }
 
 export async function deleteFolder(id: string) {
   await requireUser('media:write');
+  id = z.string().uuid().parse(id);
   // Files fall back to the root (folderId FK is set-null via update first).
   await db.update(media).set({ folderId: null }).where(eq(media.folderId, id));
   await db.update(mediaFolders).set({ parentId: null }).where(eq(mediaFolders.parentId, id));

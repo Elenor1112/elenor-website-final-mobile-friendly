@@ -10,7 +10,7 @@ import {
   services,
   testimonials,
 } from '@/db/schema';
-import { getCurrentUser } from '@/server/auth/rbac';
+import { requireUser } from '@/server/auth/rbac';
 import { Badge, Card } from '@/components/admin/ui';
 
 export const dynamic = 'force-dynamic';
@@ -95,12 +95,14 @@ function Stat({ label, value, href }: { label: string; value: number | string; h
 }
 
 export default async function AdminHomePage() {
-  const [user, stats] = await Promise.all([getCurrentUser(), collectStats()]);
+  // Auth first: stats include message senders, so never load them unauthenticated.
+  const user = await requireUser();
+  const stats = await collectStats();
 
   return (
     <div>
       <h1 className="font-display text-2xl font-semibold">
-        Welcome back{user ? `, ${user.name.split(' ')[0]}` : ''}
+        Welcome back, {user.name.split(' ')[0]}
       </h1>
       <p className="mt-1 text-sm text-white/50">
         Everything on the public site is editable from here — changes go live instantly.

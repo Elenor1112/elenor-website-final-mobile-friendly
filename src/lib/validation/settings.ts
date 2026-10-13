@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { httpsUrlOrEmpty, safeHref } from './url';
 
 // Defaults mirror the original src/content/site.ts values so a missing or
 // partial settings row degrades to the launch content instead of crashing.
@@ -7,7 +8,7 @@ export const siteSettingsSchema = z.object({
   name: z.string().default('Elenor Marketing Agency'),
   shortName: z.string().default('Elenor'),
   tagline: z.string().default('Where Innovation Meets Quality'),
-  url: z.string().default('https://elenor-marketing.com'),
+  url: httpsUrlOrEmpty().refine(Boolean, 'Enter the site URL.').default('https://elenor-marketing.com'),
   foundingYear: z.number().default(2021),
   description: z
     .string()
@@ -17,7 +18,7 @@ export const siteSettingsSchema = z.object({
   email: z.string().default('info@elenor-marketing.com'),
   phone: z.string().default('+201201137373'),
   phoneDisplay: z.string().default('+20 120 113 7373'),
-  whatsapp: z.string().default('https://wa.me/201201137373'),
+  whatsapp: safeHref().default('https://wa.me/201201137373'),
   address: z
     .object({
       street: z.string().default('28 Mohamed Abdel Hady Street'),
@@ -42,11 +43,11 @@ export const siteSettingsSchema = z.object({
     .prefault({}),
   social: z
     .object({
-      facebook: z.string().default('https://www.facebook.com/elenor.marketing'),
-      instagram: z.string().default('https://www.instagram.com/elenor.marketing/'),
-      linkedin: z.string().default('https://www.linkedin.com/company/elenor-marketing-agency'),
-      tiktok: z.string().default('https://www.tiktok.com/@elenor.marketing'),
-      youtube: z.string().default('https://www.youtube.com/@elenormarketing6394'),
+      facebook: safeHref().default('https://www.facebook.com/elenor.marketing'),
+      instagram: safeHref().default('https://www.instagram.com/elenor.marketing/'),
+      linkedin: safeHref().default('https://www.linkedin.com/company/elenor-marketing-agency'),
+      tiktok: safeHref().default('https://www.tiktok.com/@elenor.marketing'),
+      youtube: safeHref().default('https://www.youtube.com/@elenormarketing6394'),
     })
     .prefault({}),
   featuredClients: z
@@ -88,11 +89,20 @@ export const themeSettingsSchema = z.object({
 });
 export type ThemeSettings = z.infer<typeof themeSettingsSchema>;
 
+const trackingId = (pattern: RegExp, message: string) =>
+  z
+    .string()
+    .trim()
+    .refine((v) => v === '' || pattern.test(v), message)
+    .default('');
+
 export const analyticsSettingsSchema = z.object({
-  ga4Id: z.string().default(''),
-  gtmId: z.string().default(''),
-  metaPixelId: z.string().default(''),
-  tiktokPixelId: z.string().default(''),
+  // These IDs are interpolated into inline analytics scripts, so only the
+  // vendors' real ID formats are accepted.
+  ga4Id: trackingId(/^G-[A-Z0-9]+$/, 'GA4 ID must look like G-XXXXXXX.'),
+  gtmId: trackingId(/^GTM-[A-Z0-9]+$/, 'GTM ID must look like GTM-XXXXXX.'),
+  metaPixelId: trackingId(/^\d+$/, 'Meta Pixel ID must be numeric.'),
+  tiktokPixelId: trackingId(/^[A-Z0-9]+$/, 'TikTok Pixel ID must be letters and digits.'),
 });
 export type AnalyticsSettings = z.infer<typeof analyticsSettingsSchema>;
 
@@ -101,7 +111,7 @@ export const contactSettingsSchema = z.object({
     .array(z.string())
     .default(['Under EGP 25k', 'EGP 25k–75k', 'EGP 75k–200k', 'EGP 200k+', 'Not sure yet']),
   notifyEmails: z.array(z.string()).default([]),
-  mapEmbedSrc: z.string().default(''),
+  mapEmbedSrc: httpsUrlOrEmpty().default(''),
 });
 export type ContactSettings = z.infer<typeof contactSettingsSchema>;
 

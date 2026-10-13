@@ -12,6 +12,7 @@ import {
   syncLead,
 } from '@/server/ai/chat/conversation-store';
 import { checkRateLimit } from '@/server/ai/chat/rate-limit';
+import { clientIp, hitRateLimit } from '@/server/rate-limit';
 import { chatSessionCookie, resolveChatSession } from '@/server/ai/chat/session';
 
 // Streaming requires the Node runtime (the DB driver and crypto are used here).
@@ -36,14 +37,6 @@ const requestSchema = z.object({
 
 function errorResponse(message: string, status: number, extraHeaders?: HeadersInit) {
   return NextResponse.json({ error: message }, { status, headers: extraHeaders });
-}
-
-/** Best-effort client identity for rate limiting. */
-function clientKey(request: NextRequest, sessionKey: string): string {
-  const forwarded = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim();
-  const ip = forwarded || request.headers.get('x-real-ip') || 'unknown';
-  // Session-scoped so shared corporate IPs don't throttle each other.
-  return `${ip}:${sessionKey.slice(0, 16)}`;
 }
 
 export async function POST(request: NextRequest) {
@@ -77,10 +70,17 @@ export async function POST(request: NextRequest) {
   }
 
   const session = resolveChatSession();
-  const limit = checkRateLimit(clientKey(request, session.key), {
+  // IP-only: the session comes from a cookie the client can drop to get a
+  // fresh bucket on every request. The DB counter holds across instances; the
+  // in-memory one keeps a per-instance cap if the database is unreachable.
+  const ip = clientIp(request.headers);
+  const limitOptions = {
     limit: config.limits.rateLimitRequests,
     windowMs: config.limits.rateLimitWindowMs,
-  });
+  };
+  const limit =
+    (await safely(() => hitRateLimit(`chat:${ip}`, limitOptions), 'hitRateLimit')) ??
+    checkRateLimit(ip, limitOptions);
   if (!limit.allowed) {
     return errorResponse('You are sending messages too quickly. Please wait a moment.', 429, {
       'retry-after': String(limit.retryAfterSeconds),

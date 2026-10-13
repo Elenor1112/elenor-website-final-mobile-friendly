@@ -43,6 +43,13 @@
       "when": 1785916800000,
       "tag": "0005_gallery_3d_models",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1791707902157,
+      "tag": "0006_rate_limits",
+      "breakpoints": true
     }
   ]
 }

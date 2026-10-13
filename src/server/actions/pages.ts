@@ -36,15 +36,17 @@ export async function saveSection(input: z.input<typeof sectionSaveSchema>) {
   const section = await db.query.pageSections.findFirst({ where: eq(pageSections.id, id) });
   if (!section) return { ok: false as const, error: 'Section not found' };
 
+  // Unknown section types have no contract, so never store their raw input.
   const schema = sectionSchemas[section.type as SectionType];
-  const parsed = schema ? schema.safeParse(data) : null;
-  if (schema && parsed && !parsed.success) {
+  if (!schema) return { ok: false as const, error: 'This section type cannot be edited.' };
+  const parsed = schema.safeParse(data);
+  if (!parsed.success) {
     return { ok: false as const, error: parsed.error.issues[0]?.message ?? 'Invalid section data' };
   }
 
   await db
     .update(pageSections)
-    .set({ data: (parsed?.data ?? data) as Record<string, unknown>, isEnabled, updatedAt: new Date() })
+    .set({ data: parsed.data as Record<string, unknown>, isEnabled, updatedAt: new Date() })
     .where(eq(pageSections.id, id));
 
   const page = await db.query.pages.findFirst({ where: eq(pages.id, section.pageId) });

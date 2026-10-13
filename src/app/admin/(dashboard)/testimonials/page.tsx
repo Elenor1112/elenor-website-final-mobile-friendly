@@ -4,11 +4,14 @@ import { db } from '@/db';
 import { testimonials } from '@/db/schema';
 import { PageHeader } from '@/components/admin/ui';
 import { TestimonialsManager } from './TestimonialsManager';
+import { requireUser } from '@/server/auth/rbac';
 
 export const metadata: Metadata = { title: 'Testimonials' };
 export const dynamic = 'force-dynamic';
 
 export default async function TestimonialsAdminPage() {
+  await requireUser();
+
   const rows = await db.select().from(testimonials).orderBy(asc(testimonials.sortOrder));
 
   return (

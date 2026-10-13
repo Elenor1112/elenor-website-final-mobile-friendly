@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { getAiConfig, isEmbeddingConfigured } from '@/server/ai/config';
 import { collectKnowledgeDocuments } from '@/server/ai/indexing/sources';
 import { getIndexedHashes, getIndexStats } from '@/server/ai/retrieval/vector-store';
-import { requireUser } from '@/server/auth/rbac';
+import { can, requireUser } from '@/server/auth/rbac';
 import { Card, PageHeader } from '@/components/admin/ui';
 import { RebuildButton } from './RebuildButton';
 
@@ -31,7 +31,7 @@ function timeAgo(iso: string | null): string {
 }
 
 export default async function KnowledgeDashboardPage() {
-  await requireUser();
+  const user = await requireUser();
 
   // Compare what *should* be indexed against what is, so gaps are visible.
   const [stats, documents, hashes] = await Promise.all([
@@ -59,7 +59,7 @@ export default async function KnowledgeDashboardPage() {
       <PageHeader
         title="Knowledge base"
         description="What Elenor AI knows. Content re-indexes automatically whenever you publish an edit."
-        actions={<RebuildButton />}
+        actions={can(user, 'settings:write') ? <RebuildButton /> : undefined}
       />
 
       {!isEmbeddingConfigured() && (

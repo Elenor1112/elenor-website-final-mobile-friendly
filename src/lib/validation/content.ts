@@ -1,4 +1,6 @@
 import { z } from 'zod';
+import { sanitizeRichText } from '@/lib/richtext/sanitize';
+import { isSafeHref } from './url';
 
 // Input schemas shared by admin forms (react-hook-form resolvers) and server
 // actions — the single source of truth for what a valid entity looks like.
@@ -9,15 +11,25 @@ export const slugSchema = z
   .max(120)
   .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'Lowercase letters, numbers, and hyphens only');
 
-export const richTextSchema = z
+const richTextDocSchema = z
   .object({ type: z.literal('doc'), content: z.array(z.unknown()).optional() })
-  .nullable();
+  .transform((doc) => sanitizeRichText(doc) ?? { type: 'doc' as const, content: [] });
+
+export const richTextSchema = richTextDocSchema.nullable();
 
 export const seoInputSchema = z.object({
   seoTitle: z.string().max(200).nullable().default(null),
   seoDescription: z.string().max(400).nullable().default(null),
   ogImageId: z.string().uuid().nullable().default(null),
-  canonicalUrl: z.string().max(500).nullable().default(null),
+  // Same-site path or an http(s) URL; anything else (javascript:, mailto:…) is refused.
+  canonicalUrl: z
+    .string()
+    .trim()
+    .max(500)
+    .refine((v) => v === '' || (isSafeHref(v) && /^(\/|https?:\/\/)/i.test(v)), 'Enter a /path or https:// URL.')
+    .transform((v) => v || null)
+    .nullable()
+    .default(null),
   noIndex: z.boolean().default(false),
   seoKeywords: z.array(z.string().max(80)).max(20).default([]),
 });
@@ -145,7 +157,7 @@ export const postInputSchema = z.object({
   slug: slugSchema,
   title: z.string().min(1, 'Title required').max(300),
   excerpt: z.string().max(600).default(''),
-  body: z.object({ type: z.literal('doc'), content: z.array(z.unknown()).optional() }),
+  body: richTextDocSchema,
   coverImageId: z.string().uuid().nullable().default(null),
   authorName: z.string().min(1, 'Author required').max(200),
   authorTitle: z.string().max(200).default(''),

@@ -22,7 +22,8 @@ export type AiActionResult = { ok: true; message: string } | { ok: false; error:
  * and wants the result reported back.
  */
 export async function rebuildKnowledgeIndex(force = true): Promise<AiActionResult> {
-  const user = await requireUser('content:write');
+  // A forced rebuild re-embeds everything on a paid API, so it is admin-only.
+  const user = await requireUser('settings:write');
   try {
     const result = await reindexKnowledgeBase({ force });
     if (result.skippedNoProvider) {
@@ -48,7 +49,7 @@ export async function rebuildKnowledgeIndex(force = true): Promise<AiActionResul
     console.error('[elenor-ai] Manual rebuild failed:', error);
     return {
       ok: false,
-      error: error instanceof Error ? error.message : 'The rebuild failed. Check the server logs.',
+      error: 'The rebuild failed. Check the server logs.',
     };
   }
 }

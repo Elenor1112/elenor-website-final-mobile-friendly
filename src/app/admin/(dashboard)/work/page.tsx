@@ -5,11 +5,14 @@ import { db } from '@/db';
 import { caseStudies } from '@/db/schema';
 import { Button, PageHeader } from '@/components/admin/ui';
 import { WorkList } from './WorkList';
+import { requireUser } from '@/server/auth/rbac';
 
 export const metadata: Metadata = { title: 'Work' };
 export const dynamic = 'force-dynamic';
 
 export default async function WorkAdminPage() {
+  await requireUser();
+
   const rows = await db
     .select({
       id: caseStudies.id,

@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { getServiceForEdit } from '@/server/actions/services';
 import { ServiceForm, type ServiceFormValue } from '../ServiceForm';
 import { emptySeo } from '@/components/admin/SeoFieldset';
+import { requireUser } from '@/server/auth/rbac';
 
 export const metadata: Metadata = { title: 'Edit service' };
 export const dynamic = 'force-dynamic';
@@ -10,6 +11,8 @@ export const dynamic = 'force-dynamic';
 type Media = { id: string; url: string; alt: string } | null;
 
 export default async function EditServicePage({ params }: { params: { id: string } }) {
+  await requireUser();
+
   const row = (await getServiceForEdit(params.id).catch(() => null)) as
     | (Awaited<ReturnType<typeof getServiceForEdit>> & {
         featuredImage: Media;

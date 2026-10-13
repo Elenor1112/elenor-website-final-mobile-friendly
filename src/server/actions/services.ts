@@ -94,6 +94,9 @@ export async function setServiceStatus(
   status: 'draft' | 'published' | 'archived',
 ): Promise<ActionResult> {
   const user = await requireUser('content:write');
+  // Arguments arrive straight from the client; TypeScript types are not enforced at runtime.
+  id = z.string().uuid().parse(id);
+  status = z.enum(['draft', 'published', 'archived']).parse(status);
   const existing = await db.query.services.findFirst({ where: eq(services.id, id) });
   if (!existing) return { ok: false, error: 'Service not found' };
   await db.update(services).set({ status, updatedAt: new Date() }).where(eq(services.id, id));

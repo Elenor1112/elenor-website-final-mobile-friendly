@@ -5,6 +5,7 @@ import { db } from '@/db';
 import { postCategories, posts } from '@/db/schema';
 import { Badge, Button, Card, PageHeader } from '@/components/admin/ui';
 import { ListToolbar, Pagination } from '@/components/admin/ListToolbar';
+import { requireUser } from '@/server/auth/rbac';
 
 export const metadata: Metadata = { title: 'Blog' };
 export const dynamic = 'force-dynamic';
@@ -16,6 +17,8 @@ export default async function PostsAdminPage({
 }: {
   searchParams: { q?: string; status?: string; page?: string };
 }) {
+  await requireUser();
+
   const page = Math.max(1, Number(searchParams.page) || 1);
   const conditions: SQL[] = [];
   if (searchParams.q) {

@@ -3,13 +3,15 @@ import { and, eq, lte } from 'drizzle-orm';
 import { db } from '@/db';
 import { posts } from '@/db/schema';
 import { revalidatePosts } from '@/lib/revalidate';
+import { secretMatches } from '@/server/auth/secret';
 
 // Daily Vercel Cron (vercel.json). Correctness never depends on this — public
 // queries already treat due scheduled posts as live — but flipping the status
 // keeps the admin tidy and refreshes sitemap/llms.txt lastModified data.
 export async function GET(request: Request) {
   const auth = request.headers.get('authorization');
-  if (!process.env.CRON_SECRET || auth !== `Bearer ${process.env.CRON_SECRET}`) {
+  const token = auth?.startsWith('Bearer ') ? auth.slice('Bearer '.length) : null;
+  if (!secretMatches(token, process.env.CRON_SECRET)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
