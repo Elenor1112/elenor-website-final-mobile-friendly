@@ -203,15 +203,12 @@ export async function replaceChunksForSource(
   // Resolved once, outside the loop — the mode cannot change mid-transaction.
   const usePgVector = await hasPgVector();
 
-  await db.transaction(async (tx) => {
-    await tx.execute(
-      sql`DELETE FROM knowledge_chunks WHERE source_type = ${sourceType} AND source_id = ${sourceId}`,
-    );
-
-    for (const chunk of chunks) {
+  const statements = [
+    sql`DELETE FROM knowledge_chunks WHERE source_type = ${sourceType} AND source_id = ${sourceId}`,
+    ...chunks.map((chunk) => {
       const literal = toVectorLiteral(chunk.embedding, usePgVector);
       const cast = usePgVector ? sql`${literal}::vector` : sql`${literal}::real[]`;
-      await tx.execute(sql`
+      return sql`
         INSERT INTO knowledge_chunks
           (source_type, source_id, title, slug, content, embedding, metadata, content_hash, updated_at)
         VALUES (
@@ -219,9 +216,21 @@ export async function replaceChunksForSource(
           ${chunk.content}, ${cast}, ${JSON.stringify(chunk.metadata)}::jsonb,
           ${chunk.contentHash}, now()
         )
-      `);
-    }
-  });
+      `;
+    }),
+  ];
+
+  // The neon-http driver has no interactive transactions; its batch() runs
+  // the statements as one atomic HTTP transaction instead. node-postgres
+  // (local Postgres) has no batch(), so it takes the transaction path.
+  if ((db as Partial<typeof db>).batch) {
+    const [first, ...rest] = statements.map((statement) => db.execute(statement));
+    await db.batch([first, ...rest]);
+  } else {
+    await db.transaction(async (tx) => {
+      for (const statement of statements) await tx.execute(statement);
+    });
+  }
 }
 
 /**
