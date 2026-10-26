@@ -40,7 +40,7 @@ function AssistantAvatar({ size }: { size: number }) {
       aria-hidden
       width={size}
       height={size}
-      className="h-full w-full rounded-full object-cover"
+      className="h-full w-full object-contain"
     />
   );
 }
@@ -98,7 +98,7 @@ function MessageBubble({ message }: { message: ChatMessage }) {
         className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[0.7rem] font-semibold ${
           isUser
             ? 'bg-white/10 text-white/70'
-            : 'overflow-hidden bg-black'
+            : ''
         }`}
       >
         {isUser ? 'You' : <AssistantAvatar size={28} />}
@@ -272,10 +272,10 @@ export default function ChatWidget() {
         // Hook for the mobile layer, which recedes the launcher while the page
         // is scrolling so it stops sitting on top of content (see mobile.css).
         data-chat-launcher
-        className={`fixed bottom-5 right-5 z-[60] flex h-14 w-14 items-center justify-center rounded-full shadow-[0_8px_30px_-6px_rgba(0,0,0,0.6)] transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-glow focus-visible:ring-offset-2 focus-visible:ring-offset-ink motion-safe:hover:scale-105 ${
+        className={`fixed bottom-5 right-5 z-[60] flex h-14 w-14 items-center justify-center rounded-full transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-glow focus-visible:ring-offset-2 focus-visible:ring-offset-ink motion-safe:hover:scale-105 ${
           isOpen
-            ? 'bg-white/10 text-white backdrop-blur-xl'
-            : 'overflow-hidden bg-black ring-1 ring-brand-cyan/40'
+            ? 'bg-white/10 text-white shadow-[0_8px_30px_-6px_rgba(0,0,0,0.6)] backdrop-blur-xl'
+            : 'drop-shadow-[0_8px_20px_rgba(0,0,0,0.5)]'
         }`}
       >
         {isOpen ? <X className="h-5 w-5" /> : <AssistantAvatar size={56} />}
@@ -300,7 +300,7 @@ export default function ChatWidget() {
           <div className="flex items-center gap-2.5">
             <span
               aria-hidden
-              className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-black"
+              className="flex h-8 w-8 items-center justify-center"
             >
               <AssistantAvatar size={32} />
             </span>
@@ -385,7 +385,7 @@ export default function ChatWidget() {
                   <div className="flex gap-2.5">
                     <span
                       aria-hidden
-                      className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full bg-black"
+                      className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center"
                     >
                       <AssistantAvatar size={28} />
                     </span>
