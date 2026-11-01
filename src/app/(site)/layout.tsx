@@ -29,14 +29,14 @@ export async function generateMetadata(): Promise<Metadata> {
       siteName: site.name,
       title: `${site.name} — ${site.tagline}`,
       description: site.description,
-      images: [{ url: '/og-image.jpg', width: 1200, height: 630, alt: site.name }],
+      images: [{ url: '/og-elenor-2026.jpg', width: 1200, height: 630, alt: site.name }],
       locale: 'en_US',
     },
     twitter: {
       card: 'summary_large_image',
       title: site.name,
       description: site.description,
-      images: ['/og-image.jpg'],
+      images: ['/og-elenor-2026.jpg'],
     },
     robots: { index: true, follow: true },
   };
