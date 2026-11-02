@@ -95,6 +95,12 @@ export async function Footer() {
           <p>
             © {new Date().getFullYear()} {site.name}. All rights reserved.
           </p>
+          <Link
+            href="/privacy-policy"
+            className="transition-colors hover:text-white max-md:flex max-md:min-h-[44px] max-md:items-center"
+          >
+            Privacy Policy
+          </Link>
           <p>Built for speed, accessibility, and AI discoverability.</p>
         </div>
       </div>

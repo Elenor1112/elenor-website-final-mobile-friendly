@@ -23,6 +23,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     })
   );
 
+  const legalRoutes = [
+    {
+      url: `${base}/privacy-policy`,
+      lastModified: new Date('2026-11-02'),
+      changeFrequency: 'yearly' as const,
+      priority: 0.3,
+    },
+  ];
+
   const serviceRoutes = services
     .filter((s) => !s.seo.noIndex)
     .map((s) => ({
@@ -50,5 +59,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.6,
     }));
 
-  return [...staticRoutes, ...serviceRoutes, ...workRoutes, ...postRoutes];
+  return [...staticRoutes, ...legalRoutes, ...serviceRoutes, ...workRoutes, ...postRoutes];
 }
