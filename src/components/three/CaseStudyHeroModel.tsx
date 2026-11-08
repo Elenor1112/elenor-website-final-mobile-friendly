@@ -1,14 +1,19 @@
 // Hero-side brand logo slot on a case-study page, sitting beside the title.
 //
-// Server component: purely a name → static-file lookup via `getClientLogo`,
-// so no client-side rendering is needed. Case studies with no matching logo
+// Server component: uses the logo uploaded for this client in the admin
+// (case-study editor → Client logo), else the bundled static file via
+// `getClientLogo`, so no client-side rendering is needed. Case studies with no matching logo
 // still reserve the space so the hero keeps the same two-column rhythm
 // across the whole /work section.
 
 import { getClientLogo } from '@/lib/data/client-logos';
+import { getClientLogos } from '@/lib/data/work';
 
-export function CaseStudyHeroModel({ client }: { client: string }) {
-  const logo = getClientLogo(client);
+export async function CaseStudyHeroModel({ client }: { client: string }) {
+  const uploaded = await getClientLogos()
+    .then((m) => m[client.trim().toLowerCase()])
+    .catch(() => undefined);
+  const logo = uploaded ? { url: uploaded, lightMark: false } : getClientLogo(client);
 
   if (!logo) {
     // Reserved slot: same responsive box the logo occupies, so a client
