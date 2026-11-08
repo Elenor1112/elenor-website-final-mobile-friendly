@@ -1,10 +1,11 @@
 'use server';
 
-import { and, asc, eq, ne } from 'drizzle-orm';
+import { and, asc, eq, ne, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { db } from '@/db';
 import {
   caseStudies,
+  clients,
   caseStudyGalleries,
   caseStudyGalleryImages,
   rosterClients,
@@ -22,7 +23,7 @@ export async function saveCaseStudy(input: CaseStudyInput): Promise<ActionResult
   if (!parsed.success) {
     return { ok: false, error: parsed.error.issues[0]?.message ?? 'Invalid input' };
   }
-  const { id, galleries, seo, testimonial, ...data } = parsed.data;
+  const { id, galleries, seo, testimonial, clientLogoId, ...data } = parsed.data;
 
   const clash = await db.query.caseStudies.findFirst({
     where: id
@@ -93,10 +94,34 @@ export async function saveCaseStudy(input: CaseStudyInput): Promise<ActionResult
     }
   }
 
+  await upsertClient(data.client, clientLogoId);
+
   revalidateCaseStudies(data.slug);
   if (previousSlug && previousSlug !== data.slug) revalidateCaseStudies(previousSlug);
   await logAudit(user.id, id ? 'update' : 'create', 'case_study', csId!, data.client);
   return { ok: true, id: csId! };
+}
+
+// A case study naming a client we haven't seen creates that client; an
+// existing client (matched case-insensitively) gets its logo updated when the
+// editor sent one (`undefined` = leave as is, `null` = remove).
+async function upsertClient(rawName: string, logoId: string | null | undefined) {
+  const name = rawName.trim();
+  if (!name) return;
+  const existing = await db.query.clients.findFirst({
+    where: sql`lower(trim(${clients.name})) = ${name.toLowerCase()}`,
+  });
+  if (!existing) {
+    await db
+      .insert(clients)
+      .values({ name, logoId: logoId ?? null })
+      .onConflictDoNothing({ target: clients.name });
+  } else if (logoId !== undefined && logoId !== existing.logoId) {
+    await db
+      .update(clients)
+      .set({ logoId, updatedAt: new Date() })
+      .where(eq(clients.id, existing.id));
+  }
 }
 
 export async function deleteCaseStudy(id: string): Promise<ActionResult> {
@@ -156,6 +181,18 @@ export async function getCaseStudyForEdit(id: string) {
     } as never,
   });
   return row ?? null;
+}
+
+/** Known clients with their logos, for the case-study editor. */
+export async function getClientsForForm(): Promise<
+  { name: string; logo: { id: string; url: string; alt: string } | null }[]
+> {
+  await requireUser();
+  const rows = await db.query.clients.findMany({
+    orderBy: [asc(clients.name)],
+    with: { logo: { columns: { id: true, url: true, alt: true } } },
+  });
+  return rows.map((r) => ({ name: r.name, logo: r.logo ?? null }));
 }
 
 /* ------------------------------ roster clients ------------------------------ */

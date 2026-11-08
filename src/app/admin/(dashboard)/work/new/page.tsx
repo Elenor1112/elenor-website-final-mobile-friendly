@@ -5,6 +5,7 @@ import { services } from '@/db/schema';
 import { getWorkSettings } from '@/lib/data/settings';
 import { CaseStudyForm, emptyCaseStudy } from '../CaseStudyForm';
 import { requireUser } from '@/server/auth/rbac';
+import { getClientsForForm } from '@/server/actions/work';
 
 export const metadata: Metadata = { title: 'New case study' };
 export const dynamic = 'force-dynamic';
@@ -12,9 +13,10 @@ export const dynamic = 'force-dynamic';
 export default async function NewCaseStudyPage() {
   await requireUser();
 
-  const [serviceRows, workSettings] = await Promise.all([
+  const [serviceRows, workSettings, clients] = await Promise.all([
     db.select({ name: services.name }).from(services).orderBy(asc(services.sortOrder)),
     getWorkSettings(),
+    getClientsForForm(),
   ]);
 
   return (
@@ -22,6 +24,7 @@ export default async function NewCaseStudyPage() {
       initial={emptyCaseStudy}
       serviceNames={serviceRows.map((s) => s.name)}
       industries={workSettings.industries}
+      clients={clients}
     />
   );
 }

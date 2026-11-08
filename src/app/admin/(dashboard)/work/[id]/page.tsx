@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation';
 import { asc } from 'drizzle-orm';
 import { db } from '@/db';
 import { services } from '@/db/schema';
-import { getCaseStudyForEdit } from '@/server/actions/work';
+import { getCaseStudyForEdit, getClientsForForm } from '@/server/actions/work';
 import { getWorkSettings } from '@/lib/data/settings';
 import { CaseStudyForm, type CaseStudyFormValue } from '../CaseStudyForm';
 import { emptySeo } from '@/components/admin/SeoFieldset';
@@ -17,7 +17,7 @@ type Media = { id: string; url: string; alt: string } | null;
 export default async function EditCaseStudyPage({ params }: { params: { id: string } }) {
   await requireUser();
 
-  const [row, serviceRows, workSettings] = await Promise.all([
+  const [row, serviceRows, workSettings, clients] = await Promise.all([
     getCaseStudyForEdit(params.id).catch(() => null) as Promise<
       | (NonNullable<Awaited<ReturnType<typeof getCaseStudyForEdit>>> & {
           coverImage: Media;
@@ -44,13 +44,16 @@ export default async function EditCaseStudyPage({ params }: { params: { id: stri
     >,
     db.select({ name: services.name }).from(services).orderBy(asc(services.sortOrder)),
     getWorkSettings(),
+    getClientsForForm(),
   ]);
   if (!row) notFound();
+  const clientKey = row.client.trim().toLowerCase();
 
   const initial: CaseStudyFormValue = {
     id: row.id,
     slug: row.slug,
     client: row.client,
+    clientLogo: clients.find((c) => c.name.trim().toLowerCase() === clientKey)?.logo ?? null,
     industry: row.industry,
     // The primary is implicit in the form's chip row; show only the extras.
     industries: (row.industries ?? []).filter((i) => i !== row.industry),
@@ -104,6 +107,7 @@ export default async function EditCaseStudyPage({ params }: { params: { id: stri
       initial={initial}
       serviceNames={serviceRows.map((s) => s.name)}
       industries={workSettings.industries}
+      clients={clients}
     />
   );
 }

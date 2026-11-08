@@ -41,6 +41,8 @@ export type CaseStudyFormValue = {
   id?: string;
   slug: string;
   client: string;
+  /** Logo of the client record (created automatically for new names). */
+  clientLogo: PickedMedia | null;
   industry: string;
   /** Extra industries this study also filters under, beyond the primary. */
   industries: string[];
@@ -61,6 +63,7 @@ export type CaseStudyFormValue = {
 export const emptyCaseStudy: CaseStudyFormValue = {
   slug: '',
   client: '',
+  clientLogo: null,
   industry: '',
   industries: [],
   services: [],
@@ -82,6 +85,7 @@ function toInput(v: CaseStudyFormValue): CaseStudyInput {
     id: v.id,
     slug: v.slug,
     client: v.client,
+    clientLogoId: v.clientLogo?.id ?? null,
     industry: v.industry,
     industries: v.industries.filter(Boolean),
     services: v.services.filter(Boolean),
@@ -132,14 +136,22 @@ export function CaseStudyForm({
   initial,
   serviceNames,
   industries,
+  clients = [],
 }: {
   initial: CaseStudyFormValue;
   serviceNames: string[];
   industries: string[];
+  /** Known clients — a name not in this list becomes a new client on save. */
+  clients?: { name: string; logo: PickedMedia | null }[];
 }) {
   const router = useRouter();
   const [value, setValue] = useState(initial);
   const isNew = !initial.id;
+  const findClient = (name: string) => {
+    const key = name.trim().toLowerCase();
+    return key ? clients.find((c) => c.name.trim().toLowerCase() === key) : undefined;
+  };
+  const isNewClient = value.client.trim() !== '' && !findClient(value.client);
 
   const doSave = useMemo(
     () => async () => {
@@ -215,25 +227,44 @@ export function CaseStudyForm({
       <div className="space-y-6">
         <Card className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Client name">
+            <Field
+              label="Client name"
+              hint={isNewClient ? 'New client — will be added on save' : undefined}
+            >
               <Input
                 value={value.client}
+                list="case-study-clients"
                 onChange={(e) => {
                   const client = e.target.value;
+                  // Picking a known client brings its logo along.
+                  const known = findClient(client);
                   setValue((cur) => ({
                     ...cur,
                     client,
+                    clientLogo: known ? known.logo : findClient(cur.client) ? null : cur.clientLogo,
                     slug: isNew && (!cur.slug || cur.slug === slugify(cur.client)) ? slugify(client) : cur.slug,
                   }));
                   if (!isNew) notify();
                 }}
                 placeholder="Coca-Cola"
               />
+              <datalist id="case-study-clients">
+                {clients.map((c) => (
+                  <option key={c.name} value={c.name} />
+                ))}
+              </datalist>
             </Field>
             <Field label="Slug" hint="URL: /work/[slug]">
               <Input value={value.slug} onChange={(e) => set('slug', slugify(e.target.value))} />
             </Field>
           </div>
+          <Field label="Client logo" hint="shown beside the client name on /work">
+            <MediaPicker
+              value={value.clientLogo}
+              onChange={(m) => set('clientLogo', m)}
+              label="Upload client logo"
+            />
+          </Field>
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Industry" hint="shown on the card badge">
               <Select

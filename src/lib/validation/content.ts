@@ -115,6 +115,8 @@ export const caseStudyInputSchema = z.object({
   id: z.string().uuid().optional(),
   slug: slugSchema,
   client: z.string().min(1, 'Client required').max(200),
+  // Logo for the client record (auto-created for new client names).
+  clientLogoId: z.string().uuid().nullable().optional(),
   industry: z.string().max(120).default(''),
   // Additional industries this study also appears under in the /work filter.
   // `industry` is folded in below, so callers only list the extras.

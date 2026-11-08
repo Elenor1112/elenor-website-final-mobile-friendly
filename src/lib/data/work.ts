@@ -250,6 +250,22 @@ export async function getRosterClients(): Promise<PublicRosterClient[]> {
   return cachedQuery(fetch, ['roster:list'], { tags: ['roster'] });
 }
 
+/**
+ * Logos uploaded for clients in the admin, keyed by lowercased trimmed name.
+ * Busted with the case studies, since saving a study is what sets them.
+ */
+export async function getClientLogos(): Promise<Record<string, string>> {
+  const fetch = async () => {
+    const rows = await db.query.clients.findMany({
+      with: { logo: { columns: { url: true } } },
+    });
+    const out: Record<string, string> = {};
+    for (const r of rows) if (r.logo?.url) out[r.name.trim().toLowerCase()] = r.logo.url;
+    return out;
+  };
+  return cachedQuery(fetch, ['clients:logos'], { tags: ['case-studies'] });
+}
+
 export async function getCaseStudySlugs(): Promise<string[]> {
   try {
     const list = await getCaseStudies();

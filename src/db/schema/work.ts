@@ -111,7 +111,20 @@ export const rosterClients = pgTable('roster_clients', {
   isActive: boolean('is_active').default(true).notNull(),
 });
 
-export const caseStudiesRelations = relations(caseStudies, ({ one, many }) => ({
+// Case-study clients, auto-created the first time a case study names them.
+// Holds the logo uploaded from the case-study editor (shown on /work cards).
+export const clients = pgTable('clients', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  name: text('name').notNull().unique(),
+  logoId: uuid('logo_id').references(() => media.id, { onDelete: 'set null' }),
+  ...timestamps,
+});
+
+export const clientsRelations = relations(clients, ({ one }) => ({
+  logo: one(media, { fields: [clients.logoId], references: [media.id] }),
+}));
+
+export const caseStudiesRelations =relations(caseStudies, ({ one, many }) => ({
   coverImage: one(media, { fields: [caseStudies.coverImageId], references: [media.id] }),
   ogImage: one(media, { fields: [caseStudies.ogImageId], references: [media.id] }),
   galleries: many(caseStudyGalleries),

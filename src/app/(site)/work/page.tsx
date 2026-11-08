@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { WorkHero } from '@/components/WorkHero';
 import { WorkGallery } from '@/components/WorkGallery';
 import { CTA } from '@/components/sections/CTA';
-import { getCaseStudies, getRosterClients } from '@/lib/data/work';
+import { getCaseStudies, getClientLogos, getRosterClients } from '@/lib/data/work';
 import { getClientLogo } from '@/lib/data/client-logos';
 import { getServices } from '@/lib/data/services';
 import { getWorkSettings } from '@/lib/data/settings';
@@ -22,11 +22,13 @@ export default async function WorkPage({
 }: {
   searchParams: { service?: string };
 }) {
-  const [caseStudies, roster, workSettings, allServices] = await Promise.all([
+  const [caseStudies, roster, workSettings, allServices, uploadedLogos] = await Promise.all([
     getCaseStudies(),
     getRosterClients(),
     getWorkSettings(),
     getServices(),
+    // A missing table (migration not yet applied) must not take /work down.
+    getClientLogos().catch(() => ({}) as Record<string, string>),
   ]);
 
   // Only offer service filters that at least one case study is tagged with.
@@ -48,7 +50,10 @@ export default async function WorkPage({
             caseStudies={caseStudies.map((c) => ({
               slug: c.slug,
               client: c.client,
-              logo: getClientLogo(c.client),
+              // Logo uploaded in the admin wins; else the bundled static asset.
+              logo: uploadedLogos[c.client.trim().toLowerCase()]
+                ? { url: uploadedLogos[c.client.trim().toLowerCase()], lightMark: false }
+                : getClientLogo(c.client),
               industry: c.industry,
               industries: c.industries,
               services: c.services,
